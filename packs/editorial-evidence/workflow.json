@@ -1,0 +1,20 @@
+{
+  "id": "editorial-evidence",
+  "version": "0.1.0",
+  "name": "Evidence-first SEO content workflow",
+  "purpose": "Prepare and review a search-focused article with traceable claims, terminology and link targets.",
+  "status": "A newly generalized workflow from the owner's editorial practice; ranking impact is not established.",
+  "stages": [
+    {"id":"intent","outcome":"Define one reader task, market, language, primary query and the page's distinct contribution. Record overlap with existing pages."},
+    {"id":"terminology","outcome":"Retrieve topic-specific canonical terms and prohibited variants with provenance. Propose changes rather than silently rewriting a shared glossary."},
+    {"id":"evidence","outcome":"Bind material factual claims to primary sources, exact observations or reproducible calculations. Record date, assumptions and limits."},
+    {"id":"brief","outcome":"Map each reader question to an answer and its evidence or repeatable action. Plan useful outgoing and incoming internal links to actual pages."},
+    {"id":"draft","outcome":"Answer the query directly, then develop the reasoning and examples. Use natural terminology; section count follows the task. Do not invent experience or tool results."},
+    {"id":"review","outcome":"Run deterministic packet checks, then a separate editorial/source review. Structural validity does not establish factual truth or search performance."},
+    {"id":"handoff","outcome":"Package metadata, draft, reviewed media and evidence. Publication remains a separate action; retain revisions and review findings."}
+  ],
+  "configurable": ["Domain-specific glossary", "Site route inventory and locale policy", "Metadata presentation budgets", "Affiliate disclosures", "Source requirements by claim type", "Publishing adapter and API budget"],
+  "notUniversalSeoRules": ["A fixed number of headings, FAQs, internal links or images", "Title must differ from H1", "Exact-match query repetition", "Hard title/description character cutoffs", "No external links", "A green plugin score proves ranking quality"],
+  "privacy": "This pack contains newly written abstractions and synthetic examples, not original project documents, glossary entries, unpublished article plans, data or source code.",
+  "automationLimits": ["The packet linter checks supplied records and text; it does not browse or validate source content", "It does not infer all unsupported claims from arbitrary prose", "It does not generate or publish articles", "A human/editorial review is required for intent, factual support, originality and usefulness"]
+}

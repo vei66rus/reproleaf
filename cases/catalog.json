@@ -1,0 +1,330 @@
+{
+  "schemaVersion": "0.2",
+  "status": "Local research pilot; no independent user validation or physical-device certification.",
+  "provenance": "All fixtures are freshly written synthetic examples. Several failure patterns were observed in private project maintenance; these examples do not reproduce or publish those projects' source code. Framework assignments are test implementations, not claims that the original bug was found in that framework.",
+  "cases": [
+    {
+      "id": "modal-close-unreachable",
+      "title": "Modal close button becomes unreachable after scrolling",
+      "stack": "vue",
+      "category": "overlay",
+      "symptom": "Scrolling a long detail panel moves its heading and close button outside the visible panel.",
+      "applicability": "Any modal dialog, drawer, or bottom sheet containing long scrollable content and a close control; framework-agnostic CSS flex/grid layout rule.",
+      "versions": "Vue 3.x example; applies across all CSS flex/grid modal containers in modern browsers.",
+      "preconditions": [
+        "Fixed or bounded-height dialog container with overflow hidden",
+        "Header/close button placed inside the same scrolling container as body paragraphs or without a shrinkable flex child (min-height: 0)"
+      ],
+      "expected": "The close button remains visible and can be activated after reading the bottom of the panel.",
+      "steps": [
+        "Open the detail panel",
+        "Scroll its long content to the end",
+        "Try the visible close control"
+      ],
+      "acceptance": "After reaching the last content element, the close control remains inside the viewport, is the top hit at its center, and closes the panel with browser-injected pointer input without Playwright auto-scrolling it into view.",
+      "adapterCheckType": "readable-tail",
+      "limitations": [
+        "Chromium mobile viewport emulation",
+        "Does not prove iOS native browser bar or keyboard behavior"
+      ],
+      "source": "fixtures/modal-close-unreachable.js",
+      "fixSummary": "Keep the heading outside a dedicated, shrinkable scroll body.",
+      "labels": [
+        "modal",
+        "scroll",
+        "close-button",
+        "vue"
+      ]
+    },
+    {
+      "id": "nested-scroll-trap",
+      "title": "Reverse gestures stay trapped at a contact panel boundary",
+      "stack": "react",
+      "category": "scroll",
+      "symptom": "At the top of a nested scroll panel, downward finger movement cannot return to the preceding page section.",
+      "applicability": "Inline scrollable regions (cards, tables, log panels, contact boxes) embedded inside a taller vertically scrolling document.",
+      "versions": "React 18/19 example; applies to any inline container using CSS overscroll-behavior.",
+      "preconditions": [
+        "Vertically scrollable document containing an inline child with overflow-y: auto or scroll",
+        "overscroll-behavior-y: contain or none applied to the inline child rather than a modal dialog"
+      ],
+      "expected": "A reverse gesture at the panel boundary scrolls the surrounding document toward the preceding section.",
+      "steps": [
+        "Scroll the document to the contact panel",
+        "Reach the top of the nested panel",
+        "Swipe downward over its content"
+      ],
+      "acceptance": "The document scroll position decreases by more than 50 CSS pixels after trusted browser touch input over the panel, while the panel starts at its top boundary.",
+      "adapterCheckType": "control",
+      "limitations": [
+        "CDP touch injection is Chromium-specific",
+        "Wheel checks are separate from touch checks",
+        "Not physical iOS or Android evidence"
+      ],
+      "source": "fixtures/nested-scroll-trap.jsx",
+      "fixSummary": "Allow scroll chaining at this panel boundary; containment remains appropriate for modal dialogs.",
+      "labels": [
+        "scroll-chaining",
+        "overscroll-behavior",
+        "react",
+        "touch"
+      ]
+    },
+    {
+      "id": "canvas-resize-gap",
+      "title": "A full-screen canvas exposes a gap after viewport growth",
+      "stack": "three",
+      "category": "viewport",
+      "symptom": "A scene sized only at startup leaves an uncovered strip when its container grows.",
+      "applicability": "Full-bleed WebGL, Three.js, or 2D canvas hosts on mobile viewports where dynamic toolbars or orientation changes alter container height.",
+      "versions": "three >= 0.150; applies to any canvas renderer initialized once without ResizeObserver or host resize handling.",
+      "preconditions": [
+        "Full-viewport or flexible host container housing a canvas element",
+        "Renderer dimensions set only during initial mount without observing host box changes"
+      ],
+      "expected": "The rendered canvas continues to cover its full-screen host after viewport resizing.",
+      "steps": [
+        "Open the scene at a short viewport height",
+        "Increase viewport height without changing width",
+        "Inspect the bottom edge and the last visible pixel"
+      ],
+      "acceptance": "After a height-only resize the canvas element covers the viewport, its drawing buffer matches its CSS size at the fixture's 1x render scale, and it is the hit target near the bottom edge.",
+      "adapterCheckType": "canvas-coverage",
+      "limitations": [
+        "Synthetic desktop viewport resizing, not Safari address-bar animation",
+        "Geometry coverage does not establish correct camera aspect or rendered scene content",
+        "No performance guarantee for an arbitrary 3D scene",
+        "WebGL must be available"
+      ],
+      "source": "fixtures/canvas-resize-gap.js",
+      "fixSummary": "Observe the actual render host and update renderer dimensions and camera aspect when it changes.",
+      "labels": [
+        "canvas",
+        "three.js",
+        "resize",
+        "viewport"
+      ]
+    },
+    {
+      "id": "canvas-touch-trap",
+      "title": "A game canvas blocks vertical page gestures",
+      "stack": "phaser",
+      "category": "scroll",
+      "symptom": "Dragging vertically over an embedded game consumes the gesture instead of moving the page.",
+      "applicability": "Embedded interactive canvases, mini-games, or charts inside long editorial pages that only require tap or horizontal input.",
+      "versions": "Phaser 3.x; applies to any canvas library that sets touch-action: none or calls preventDefault on touchevents.",
+      "preconditions": [
+        "Canvas widget embedded mid-page in a vertically scrolling document",
+        "Input manager disables pan-y touch actions even though vertical drag is unused"
+      ],
+      "expected": "A game that only needs tap input allows the page to scroll vertically over its canvas.",
+      "steps": [
+        "Scroll to the embedded tap game",
+        "Start a vertical swipe in the canvas",
+        "Observe the document scroll position"
+      ],
+      "acceptance": "A browser-injected vertical touch gesture beginning on the real Phaser canvas moves the document by more than 50 CSS pixels, and tapping the game circle still updates its score.",
+      "adapterCheckType": "control",
+      "limitations": [
+        "Synthetic Phaser integration example, not a discovered defect in an owner game",
+        "Not appropriate for games that require unrestricted vertical drag controls",
+        "Chromium touch emulation, not a physical device"
+      ],
+      "source": "fixtures/canvas-touch-trap.js",
+      "fixSummary": "Configure Phaser touch handling and touch-action for this tap-only embedded game.",
+      "labels": [
+        "phaser",
+        "canvas",
+        "touch-action",
+        "scroll"
+      ]
+    },
+    {
+      "id": "menu-under-overlay",
+      "title": "An open menu is covered by contact controls",
+      "stack": "html",
+      "category": "overlay",
+      "symptom": "A contact layer creates a higher stacking context than the open navigation menu.",
+      "applicability": "Mobile navigation drawers, dropdowns, and popovers rendered alongside sticky CTAs, floating widgets, or positioned sections.",
+      "versions": "Universal HTML/CSS stacking context behavior across all engines.",
+      "preconditions": [
+        "Navigation overlay opened over a page containing positioned or fixed sibling sections",
+        "Menu z-index is lower than or trapped inside a parent stacking context below the sibling layer"
+      ],
+      "expected": "The tested navigation link is above the overlapping contact control and receives pointer input at its center.",
+      "steps": [
+        "Open navigation over the contact section",
+        "Locate the menu link above the form",
+        "Tap the link"
+      ],
+      "acceptance": "The navigation link is topmost at its center and browser-injected pointer input activates that link rather than the underlying form.",
+      "adapterCheckType": "control",
+      "limitations": [
+        "Synthetic stacking-context example",
+        "Does not replace complete keyboard/accessibility testing"
+      ],
+      "source": "fixtures/menu-under-overlay.js",
+      "fixSummary": "Place the menu in a deliberate top-level overlay layer above page content.",
+      "labels": [
+        "stacking-context",
+        "z-index",
+        "menu",
+        "overlay"
+      ]
+    },
+    {
+      "id": "heading-grid-overflow",
+      "title": "An unbroken heading expands a mobile grid",
+      "stack": "html",
+      "category": "overflow",
+      "symptom": "The intrinsic width of a heading expands a grid beyond a narrow layout viewport.",
+      "applicability": "CSS Grid and Flexbox layouts displaying long localized words, technical identifiers, or URLs on narrow mobile screens.",
+      "versions": "Universal CSS Grid / Intrinsic Sizing specification across all engines.",
+      "preconditions": [
+        "Grid track or flex item with default min-width: auto containing long unbroken tokens or headings",
+        "Narrow mobile viewport (320px-390px) where token width exceeds container width"
+      ],
+      "expected": "Long headings wrap and the document stays within its declared viewport.",
+      "steps": [
+        "Open the grid at a narrow mobile viewport",
+        "Inspect the document width",
+        "Allow unbroken words to wrap and repeat the same check"
+      ],
+      "acceptance": "The document scroll width does not exceed its layout client width by more than one CSS pixel.",
+      "adapterCheckType": "document-overflow",
+      "limitations": [
+        "Synthetic minimal example derived from an owner-authorized public-page observation, not copied project source",
+        "Intentional horizontal document layouts are outside this acceptance requirement",
+        "Does not establish all text readability or search ranking quality"
+      ],
+      "source": "fixtures/heading-grid-overflow.js",
+      "fixSummary": "Allow unbroken heading text to wrap so its intrinsic grid size does not widen the document.",
+      "labels": [
+        "css-grid",
+        "overflow",
+        "long-heading",
+        "mobile"
+      ]
+    },
+    {
+      "id": "sticky-bar-focus-occlusion",
+      "title": "A fixed bottom bar occludes a focused form field after scrollIntoView",
+      "stack": "html",
+      "category": "focus",
+      "symptom": "Focusing or scrolling to a form input near the bottom of the document leaves the field covered by a fixed bottom action bar.",
+      "applicability": "Checkout, booking, and contact forms on pages with sticky/fixed bottom summary bars or persistent mobile navigation.",
+      "versions": "Universal CSS Scroll Snap / scroll-padding-bottom behavior in Chromium, WebKit, and Gecko.",
+      "preconditions": [
+        "Fixed bottom bar (position: fixed; bottom: 0) overlapping the lower viewport region",
+        "Scrollable document with interactive form controls and no matching scroll-padding-bottom or scroll-margin-bottom"
+      ],
+      "expected": "Focusing and scrolling the field into view leaves the input uncovered above the fixed bottom bar and ready for pointer and keyboard input.",
+      "steps": [
+        "Open the form with a fixed bottom summary bar",
+        "Scroll the lower delivery instruction input into view and focus it",
+        "Verify the field is not covered by the fixed bar and accepts input"
+      ],
+      "acceptance": "After scrolling the target input to its nearest visible position and focusing it, the input remains inside the viewport, is the topmost hit target at its center above the fixed bottom bar, and accepts typed text.",
+      "adapterCheckType": "focus-occlusion",
+      "limitations": [
+        "Tests CSS scroll-padding and fixed DOM overlays, not native OS virtual keyboard height",
+        "Single-point center hit check"
+      ],
+      "source": "fixtures/sticky-bar-focus-occlusion.js",
+      "fixSummary": "Set scroll-padding-bottom on the scroll container (or scroll-margin-bottom on fields) exceeding the fixed bar height.",
+      "labels": [
+        "focus",
+        "sticky",
+        "forms",
+        "scroll-padding",
+        "overlay"
+      ]
+    },
+    {
+      "id": "async-submit-double-fire",
+      "title": "Rapid taps on an async form submit trigger duplicate submissions",
+      "stack": "react",
+      "category": "forms",
+      "symptom": "Activating a submit button twice while an async request is still in flight dispatches duplicate submissions and exposes no busy state.",
+      "applicability": "Client-side forms, checkout buttons, and mutation triggers in React, Vue, or vanilla JS with asynchronous submit handlers.",
+      "versions": "React 18/19 example; applies to any async submit handler lacking synchronous in-flight locking.",
+      "preconditions": [
+        "Asynchronous form submit handler taking network or timer latency to settle",
+        "No synchronous ref lock or disabled/aria-busy state preventing re-entry before state updates flush"
+      ],
+      "expected": "While the submission is in flight, the form marks itself busy, disables repeat activation, and records only one submission.",
+      "steps": [
+        "Activate the submit button to start the async request",
+        "Immediately activate the submit button a second time while in flight",
+        "Wait for completion and inspect the recorded submission count"
+      ],
+      "acceptance": "Two rapid pointer activations on the submit control during an in-flight submission record exactly one submission and expose disabled or aria-busy state while pending.",
+      "adapterCheckType": "control",
+      "limitations": [
+        "Synthetic timer-based async handler, not a backend idempotency key check",
+        "Client-side locking complements rather than replaces server-side idempotency"
+      ],
+      "source": "fixtures/async-submit-double-fire.jsx",
+      "fixSummary": "Guard submit entry synchronously with an in-flight ref and disable the submit control with aria-busy while pending.",
+      "labels": [
+        "forms",
+        "submit",
+        "double-click",
+        "in-flight-state",
+        "react"
+      ]
+    },
+    {
+      "id": "ssr-disclosure-hydration-reset",
+      "title": "Deferred client hydration resets an already-opened SSR disclosure",
+      "stack": "html",
+      "category": "hydration",
+      "symptom": "Toggling a server-rendered disclosure button before deferred client hydration finishes resets aria-expanded and hides the opened panel.",
+      "applicability": "SSR, SSG, and islands architectures (Astro, Next.js, Nuxt, WordPress, custom SSR) where users can interact before client scripts finish hydrating.",
+      "versions": "Universal SSR/hydration lifecycle pattern across islands and deferred scripts.",
+      "preconditions": [
+        "Server-rendered interactive control (such as an accordion or disclosure) operable before deferred hydration completes",
+        "Client initialization overwrites state with a hardcoded closed default instead of reading existing DOM attributes"
+      ],
+      "expected": "Client hydration preserves the user-toggled expanded state and keeps the disclosure panel visible.",
+      "steps": [
+        "Activate the server-rendered disclosure button before hydration",
+        "Run the deferred client hydration pass",
+        "Verify aria-expanded remains true and the disclosure panel stays visible"
+      ],
+      "acceptance": "After activating the disclosure control prior to the hydration event and then completing hydration, aria-expanded remains true and the disclosure panel remains visible and topmost.",
+      "adapterCheckType": "control",
+      "limitations": [
+        "Synthetic event-driven hydration trigger representing deferred script execution",
+        "Does not test full framework virtual-DOM tree mismatches"
+      ],
+      "source": "fixtures/ssr-disclosure-hydration-reset.js",
+      "fixSummary": "Initialize client state from the current DOM attribute state (or replay queued interactions) instead of resetting to a static default.",
+      "labels": [
+        "hydration",
+        "ssr",
+        "accessibility",
+        "disclosure",
+        "aria-expanded"
+      ]
+    }
+  ],
+  "unverifiedHeuristics": [
+    {
+      "id": "heuristic-ios-keyboard-visual-viewport",
+      "status": "unverified-heuristic",
+      "category": "focus",
+      "title": "iOS Safari virtual keyboard visualViewport offset drift",
+      "note": "On physical iOS Safari, fixed toolbars positioned via layout viewport coordinates may detach when the virtual keyboard shrinks visualViewport without resizing innerHeight.",
+      "whyUnverified": "Requires physical iOS Safari keyboard interaction; Chromium headless viewport emulation cannot certify native keyboard behavior."
+    },
+    {
+      "id": "heuristic-locale-cjk-line-break",
+      "status": "unverified-heuristic",
+      "category": "overflow",
+      "title": "Locale-specific line-break rules with mixed Latin/CJK tokens",
+      "note": "Applying word-break: break-all globally to fix mobile grid overflow can degrade legibility in mixed-script headings compared with overflow-wrap: anywhere.",
+      "whyUnverified": "Visual typography and reading comfort across locales require human editorial review rather than a binary geometry check."
+    }
+  ]
+}

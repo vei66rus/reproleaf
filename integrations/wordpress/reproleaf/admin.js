@@ -1,0 +1,7 @@
+(()=>{
+ const frame=document.getElementById('reproleaf-admin-frame'),button=document.getElementById('reproleaf-admin-analyze'),status=document.getElementById('reproleaf-admin-status');if(!frame||!button)return;
+ const ru=reproleafAdmin.language==='ru',paragraphs=document.getElementById('reproleaf-include-passages');
+ window.addEventListener('message',event=>{if(event.origin===location.origin&&event.source===frame.contentWindow&&event.data?.type==='reproleaf:ready')button.disabled=false;});
+ const ping=()=>frame.contentWindow.postMessage({type:'reproleaf:ping'},location.origin);frame.addEventListener('load',ping);ping();
+ button.onclick=async()=>{button.disabled=true;status.textContent=ru?'Готовим локальную карту…':'Preparing the local inventory…';try{const body=new URLSearchParams({action:'reproleaf_analyze',nonce:reproleafAdmin.nonce});if(paragraphs?.checked)body.set('include_passages','1');const response=await fetch(reproleafAdmin.ajaxUrl,{method:'POST',credentials:'same-origin',body});const result=await response.json();if(!response.ok||!result.success)throw Error(result.data?.message||'Inventory request failed');frame.contentWindow.postMessage({type:'reproleaf:inventory',inventory:result.data},location.origin);status.textContent=ru?'Данные переданы локальной панели ниже.':'Inventory passed to the local workspace below.';}catch(error){status.textContent=error.message;}finally{button.disabled=false;}};
+})();

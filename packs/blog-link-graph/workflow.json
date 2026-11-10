@@ -1,0 +1,6 @@
+{
+  "id":"blog-link-graph",
+  "purpose":"Audit stored internal links in a supplied blog inventory and propose editorial link candidates.",
+  "steps":["Export published stored links with the WordPress helper or prepare a JSON inventory.","State coverage and omissions before interpreting incoming links.","Separate distinct incoming pages, link occurrences, unresolved internal targets and external outbound domains.","Review no-observed-incoming candidates against omitted navigation, hubs and other content.","Review lexical link candidates in context and choose useful anchors; do not insert automatically.","Repeat the same audit after authorized edits and retain the before/after evidence."],
+  "limits":["Internal incoming links are not external backlinks.","Missing targets are unresolved, not confirmed HTTP failures.","No fixed link quota, mandatory title/H1 inequality or keyword-density target.","Topic clusters are declared; suggestions use lexical overlap, not semantic certainty.","The WordPress export omits navigation, dynamic shortcode output and synced-block expansion."]
+}

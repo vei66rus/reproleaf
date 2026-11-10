@@ -1,0 +1,21 @@
+{
+  "version": "0.7.0",
+  "loader": "loader-PGIVDLXO.js",
+  "playground": "playground-NOPVWH3Z.js",
+  "worker": "editorial-worker-AXHKQEFK.js",
+  "install": "install-F2HOLM7F.js",
+  "projects": "dev-projects-MID4CCHH.js",
+  "diagnose": "diagnose-VW4ZFO7E.js",
+  "anchorEvidence": "recommendation-evidence-copy-UJ5NBNXW.js",
+  "styles": "playground-930f66fb26.css",
+  "bytes": {
+    "loader-PGIVDLXO.js": 1360,
+    "playground-NOPVWH3Z.js": 191262,
+    "editorial-worker-AXHKQEFK.js": 540834,
+    "install-F2HOLM7F.js": 8540,
+    "dev-projects-MID4CCHH.js": 116186,
+    "diagnose-VW4ZFO7E.js": 515420,
+    "recommendation-evidence-copy-UJ5NBNXW.js": 5217,
+    "playground-930f66fb26.css": 27000
+  }
+}

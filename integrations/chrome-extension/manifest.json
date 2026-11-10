@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "Reproleaf Active Tab Inspector",
+  "version": "0.7.0",
+  "description": "Local-only structural SEO and mobile layout inspector for the active tab. Runs only on explicit click with activeTab permission.",
+  "permissions": [
+    "activeTab",
+    "scripting"
+  ],
+  "action": {
+    "default_title": "Inspect current tab in Reproleaf",
+    "default_popup": "popup.html"
+  }
+}

@@ -1,0 +1,77 @@
+<section id="try" class="reproleaf-workbench" data-reproleaf-playground="" data-reproleaf-auto="" data-view="editor" data-language="en">
+      <h2>SEO workspace</h2>
+      <p>Paste a Markdown draft to get strengths, issues and prioritized edits. The checker runs in your browser without sending the draft to the tool server.</p>
+      <div data-reproleaf-intro="" hidden=""><button type="button" data-reproleaf-open="" class="agent-kit-download">Open the checker ↗</button></div>
+      <p data-reproleaf-load="" role="status" aria-live="polite"></p>
+      <div data-reproleaf-panel="" class="ym-hide-content">
+        <section class="reproleaf-projects ym-hide-content" data-project-workspace="seo">
+ <div class="reproleaf-project-heading"><h3>Project and history</h3><span>On this device</span></div>
+ <p class="reproleaf-help">Save a project once to retain subsequent completed checks. Save draft edits with the Save button. Data belongs to this browser and site origin, with no server upload.</p>
+ <div class="reproleaf-project-fields"><label>Saved projects<select data-project-picker="" class="ym-disable-keys"><option value="">New project</option></select></label><label>Project name<input data-project-name="" class="ym-disable-keys" type="text" maxlength="100" autocomplete="off" placeholder="My website / article"></label></div>
+ <div class="reproleaf-project-actions"><button type="button" data-project-save="">Save</button><button type="button" data-project-open="">Open</button><button type="button" data-project-new="">New project</button><button type="button" data-project-export="">Export project</button><button type="button" data-project-delete="">Delete</button></div>
+ <p data-project-status="" class="reproleaf-help" role="status" aria-live="polite"></p>
+ <div data-project-delete-confirm="" class="reproleaf-project-confirm" hidden=""><p>Delete the project and all of its saved checks? <strong data-project-delete-name=""></strong></p><button type="button" data-project-delete-yes="">Delete project</button><button type="button" data-project-delete-cancel="">Cancel</button></div>
+ <details class="reproleaf-project-history"><summary>History and comparison</summary><p data-project-count="" class="reproleaf-help">The latest 15 checks are retained per project.</p><ul data-project-runs=""></ul>
+ <div class="reproleaf-project-fields"><label>Before<select data-run-before="" class="ym-disable-keys" aria-label="Before check"></select></label><label>After<select data-run-after="" class="ym-disable-keys" aria-label="After check"></select></label></div><button type="button" data-run-compare="">Compare checks</button><div data-run-comparison=""></div>
+ </details><p class="reproleaf-help">Up to 20 projects and the latest 15 checks per project. Browser cleanup or private browsing can remove history. Exports contain your inputs and reports: review them before sharing.</p>
+ </section>        <div class="reproleaf-toolbar"><h3 data-reproleaf-title="" tabindex="-1">Reproleaf / Analyze</h3><span class="reproleaf-analysis-label" data-analysis-label>Article</span></div>
+        <div class="reproleaf-progress" data-analysis-progress="" role="progressbar" aria-label="Analysis in progress" hidden=""><span></span></div>
+        <div class="reproleaf-view-switch" aria-label="Workspace view"><button type="button" data-workspace-view="editor" aria-pressed="true">Editor</button><button type="button" data-workspace-view="report" aria-pressed="false">Report</button></div>
+        <div class="reproleaf-layout">
+        <form class="ym-disable-submit" data-reproleaf-form="">
+          <fieldset class="reproleaf-modes"><legend>Input</legend>
+            <label><input class="ym-disable-keys" type="radio" name="mode" value="text" checked=""> Article</label>
+            <label><input class="ym-disable-keys" type="radio" name="mode" value="packet"> Evidence</label>
+            <label><input class="ym-disable-keys" type="radio" name="mode" value="blog"> Site inventory</label>
+          </fieldset>
+          <div data-text-fields="">
+            <button type="button" data-load-example="" class="reproleaf-text-button">Load a synthetic example</button>
+            <label>Article Markdown<textarea class="ym-disable-keys" name="markdown" maxlength="150000" rows="14" required="" data-required="" spellcheck="false"></textarea></label>
+            <details class="reproleaf-options" open=""><summary>Query, metadata and internal links</summary>
+            <div class="reproleaf-fields">
+              <label>Search title<input class="ym-disable-keys" name="title" maxlength="500" autocomplete="off"></label>
+              <label>Primary search query<input class="ym-disable-keys" name="primaryQuery" maxlength="200" autocomplete="off"></label>
+            </div>
+            <label>Page description<textarea class="ym-disable-keys reproleaf-short" name="description" maxlength="1000" rows="2"></textarea></label>
+            <label>What should the reader accomplish?<input class="ym-disable-keys" name="readerTask" maxlength="2000" autocomplete="off"></label>
+            <label>Where is the H1 rendered?<select name="h1Mode" class="ym-disable-keys"><option value="renderer">By the site template, as in WordPress</option><option value="markdown">Inside the Markdown — a # heading</option></select></label>
+            <label>Template H1, if known<input name="renderedH1" class="ym-disable-keys" maxlength="1000" autocomplete="off"></label>
+            <label class="reproleaf-check"><input type="checkbox" class="ym-disable-keys" name="useInventory"> Check internal links against my page inventory</label>
+            <label>Known page paths, one per line<textarea class="ym-disable-keys reproleaf-short" name="sitePaths" rows="3" disabled="" placeholder="/blog/example
+/tools/example"></textarea></label>
+            </details>
+          </div>
+          <div data-packet-fields="" hidden=""><label>JSON packet with the draft, claims, sources and glossary<textarea class="ym-disable-keys" name="packet" rows="14" maxlength="1048576" spellcheck="false"></textarea></label><p class="reproleaf-help">The archive includes the format and an example. The get_workflow MCP tool also returns the schema.</p></div>
+          <div data-blog-fields="" hidden="">
+            <p>Load an inventory of published pages. Incoming links are counted only within this data; navigation and dynamic blocks may be omitted.</p>
+            <label>JSON or XML sitemap, up to 5 MiB<input class="ym-disable-keys" type="file" name="blogFile" accept="application/json,application/xml,text/xml,.json,.xml"></label>
+            <label>Or paste the JSON / XML inventory<textarea class="ym-disable-keys" name="blog" rows="14" maxlength="5242880" spellcheck="false"></textarea></label>
+            <button type="button" data-load-blog-example="" class="reproleaf-text-button">Load a three-page example</button>
+            <p><a href="https://evolkov.tech/wp-content/themes/evolkov/assets/tools/reproleaf-wordpress-0.7.0.zip" download="">Download the free WordPress export helper ↗</a></p>
+          </div>
+          <div class="agent-kit-actions"><button type="submit" class="agent-kit-download">Run analysis ↗</button><button type="button" data-download-report="" class="reproleaf-text-button" disabled="">Download JSON report</button><button type="button" data-download-html="" class="reproleaf-text-button">Client report — HTML</button></div>
+        </form>
+        <aside class="reproleaf-report"><p class="reproleaf-report-label">Review</p>
+        <p role="status" aria-live="polite" data-check-status="" class="reproleaf-status">Run a check to see findings and next steps here.</p>
+        <section data-check-result="" hidden="" aria-label="Review result">
+          <div data-dashboard=""></div>
+          <p data-result-counts="" class="reproleaf-help"></p>
+          <h4>What is working</h4><ul data-strengths="" class="reproleaf-strengths"></ul>
+          <h4>What to fix or review</h4><ul data-findings="" class="reproleaf-findings"></ul>
+          <div data-blog-details="" hidden=""><h4>Page connections</h4><table class="reproleaf-page-table"><thead><tr><th>Page</th><th>Incoming</th><th>Outgoing</th><th>Topic</th></tr></thead><tbody></tbody></table><h4>New link candidates</h4><ul data-link-suggestions="" class="reproleaf-suggestions"></ul></div>
+          <p data-result-note="" class="reproleaf-help"></p>
+        </section>
+        <section class="reproleaf-ai" data-ai-handoff="" aria-label="Discuss with AI">
+          <h4>Get another perspective</h4>
+          <label>Prepare<select data-ai-intent="" class="ym-disable-keys"><option value="summary">A brief summary</option><option value="advice">Advice on next edits</option></select></label>
+          <label class="reproleaf-check"><input type="checkbox" data-ai-draft="" class="ym-disable-keys"> Include the article draft</label>
+          <p class="reproleaf-help">By default: the tool link and the latest report, if available. A button copies the prompt and opens the service. Paste it into the chat; nothing is submitted automatically.</p>
+          <label>Prompt to share<textarea data-ai-preview="" class="ym-disable-keys reproleaf-short" readonly="" rows="5"></textarea></label>
+          <div class="reproleaf-ai-actions"><button type="button" data-ai-provider="chatgpt" aria-label="ChatGPT" title="ChatGPT"><svg aria-hidden="true" focusable="false" fill="currentColor" fill-rule="evenodd" height="1em" style="flex:none;line-height:1" viewBox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><title>OpenAI</title><path d="M9.205 8.658v-2.26c0-.19.072-.333.238-.428l4.543-2.616c.619-.357 1.356-.523 2.117-.523 2.854 0 4.662 2.212 4.662 4.566 0 .167 0 .357-.024.547l-4.71-2.759a.797.797 0 00-.856 0l-5.97 3.473zm10.609 8.8V12.06c0-.333-.143-.57-.429-.737l-5.97-3.473 1.95-1.118a.433.433 0 01.476 0l4.543 2.617c1.309.76 2.189 2.378 2.189 3.948 0 1.808-1.07 3.473-2.76 4.163zM7.802 12.703l-1.95-1.142c-.167-.095-.239-.238-.239-.428V5.899c0-2.545 1.95-4.472 4.591-4.472 1 0 1.927.333 2.712.928L8.23 5.067c-.285.166-.428.404-.428.737v6.898zM12 15.128l-2.795-1.57v-3.33L12 8.658l2.795 1.57v3.33L12 15.128zm1.796 7.23c-1 0-1.927-.332-2.712-.927l4.686-2.712c.285-.166.428-.404.428-.737v-6.898l1.974 1.142c.167.095.238.238.238.428v5.233c0 2.545-1.974 4.472-4.614 4.472zm-5.637-5.303l-4.544-2.617c-1.308-.761-2.188-2.378-2.188-3.948A4.482 4.482 0 014.21 6.327v5.423c0 .333.143.571.428.738l5.947 3.449-1.95 1.118a.432.432 0 01-.476 0zm-.262 3.9c-2.688 0-4.662-2.021-4.662-4.519 0-.19.024-.38.047-.57l4.686 2.71c.286.167.571.167.856 0l5.97-3.448v2.26c0 .19-.07.333-.237.428l-4.543 2.616c-.619.357-1.356.523-2.117.523zm5.899 2.83a5.947 5.947 0 005.827-4.756C22.287 18.339 24 15.84 24 13.296c0-1.665-.713-3.282-1.998-4.448.119-.5.19-.999.19-1.498 0-3.401-2.759-5.947-5.946-5.947-.642 0-1.26.095-1.88.31A5.962 5.962 0 0010.205 0a5.947 5.947 0 00-5.827 4.757C1.713 5.447 0 7.945 0 10.49c0 1.666.713 3.283 1.998 4.448-.119.5-.19 1-.19 1.499 0 3.401 2.759 5.946 5.946 5.946.642 0 1.26-.095 1.88-.309a5.96 5.96 0 004.162 1.713z"></path></svg><span class="reproleaf-sr-only">ChatGPT</span></button><button type="button" data-ai-provider="perplexity" aria-label="Perplexity" title="Perplexity"><svg class="evolkov-article-icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path fill="currentColor" stroke="none" d="M22.398 7.09h-2.31V.068l-7.51 6.354V.158h-1.156v6.196L4.49 0v7.09H1.602v10.397H4.49V24l6.933-6.36v6.201h1.155v-6.047l6.932 6.181v-6.488h2.888zm-3.466-4.531v4.53h-5.355zm-13.286.067l4.869 4.464h-4.87zM2.758 16.332V8.245h7.847L4.49 14.36v1.972zm2.888 5.04v-6.534l5.776-5.776v7.011zm12.708.025l-5.776-5.15V9.061l5.776 5.776zm2.889-5.065H19.51V14.36l-6.115-6.115h7.848z"></path></svg><span class="reproleaf-sr-only">Perplexity</span></button><button type="button" data-ai-provider="gemini" aria-label="Gemini" title="Gemini"><svg aria-hidden="true" focusable="false" fill="currentColor" fill-rule="evenodd" height="1em" style="flex:none;line-height:1" viewBox="0 0 24 24" width="1em" xmlns="http://www.w3.org/2000/svg"><title>Gemini</title><path d="M20.616 10.835a14.147 14.147 0 01-4.45-3.001 14.111 14.111 0 01-3.678-6.452.503.503 0 00-.975 0 14.134 14.134 0 01-3.679 6.452 14.155 14.155 0 01-4.45 3.001c-.65.28-1.318.505-2.002.678a.502.502 0 000 .975c.684.172 1.35.397 2.002.677a14.147 14.147 0 014.45 3.001 14.112 14.112 0 013.679 6.453.502.502 0 00.975 0c.172-.685.397-1.351.677-2.003a14.145 14.145 0 013.001-4.45 14.113 14.113 0 016.453-3.678.503.503 0 000-.975 13.245 13.245 0 01-2.003-.678z"></path></svg><span class="reproleaf-sr-only">Gemini</span></button><button type="button" data-ai-copy="">Copy prompt</button></div>
+          <p data-ai-status="" class="reproleaf-help" role="status" aria-live="polite"></p>
+          <p class="reproleaf-help">MCP is configured separately in a compatible client. Opening a chat does not install MCP. The current archive includes a local server; a public URL has not been published yet. <a href="https://developers.openai.com/api/docs/guides/custom-mcp-server" target="_blank" rel="noopener noreferrer">ChatGPT MCP ↗</a> · <a href="https://geminicli.com/docs/tools/mcp-server/" target="_blank" rel="noopener noreferrer">Gemini CLI MCP ↗</a></p>
+        </section>
+        </aside></div>
+      </div>
+      <noscript><p>Browser checks need JavaScript. Documentation and CLI checks are available in the download.</p></noscript>
+    </section>

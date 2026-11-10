@@ -1,0 +1,4 @@
+import {fixed,root,ready} from './shared.js';
+document.documentElement.style.scrollPaddingBottom=fixed?'120px':'0px';
+root.innerHTML=`<main class="long-page"><h1>Checkout delivery instructions</h1><div class="spacer">Scroll to the delivery instruction field near the bottom of the form.</div><section><label for="order-note">Delivery instruction</label><input id="order-note" data-order-note value="" placeholder="Gate code or floor" style="display:block;width:100%;height:48px;margin-top:8px"></section><div style="height:140px"></div><aside data-sticky-bar style="position:fixed;left:0;right:0;bottom:0;height:96px;z-index:40;background:#e5d4c6;border-top:1px solid #a8a397;padding:18px;display:flex;align-items:center;justify-content:space-between"><span>Order summary</span><button type="button">Continue</button></aside></main>`;
+ready();

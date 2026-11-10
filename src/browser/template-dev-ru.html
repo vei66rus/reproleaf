@@ -1,0 +1,17 @@
+<section class="reproleaf-dev-memory ym-hide-content" data-dev-projects="" data-language="ru">
+ <h2>Проверки проекта: история и сравнение</h2><p>Импортируйте отчёт CLI по адаптеру, сохраните его локально и сравните с повторным запуском. Эта панель не запускает ваше приложение и не сертифицирует его в браузере.</p>
+ <section class="reproleaf-projects ym-hide-content" data-project-workspace="web">
+ <div class="reproleaf-project-heading"><h3>Проект и история</h3><span>На этом устройстве</span></div>
+ <p class="reproleaf-help">Сохраните проект один раз — последующие успешные проверки будут добавляться в историю. Черновики сохраняются кнопкой «Сохранить». Данные привязаны к этому браузеру и адресу сайта, без загрузки на сервер.</p>
+ <div class="reproleaf-project-fields"><label>Сохранённые проекты<select data-project-picker="" class="ym-disable-keys"><option value="">Новый проект</option></select></label><label>Название проекта<input data-project-name="" class="ym-disable-keys" type="text" maxlength="100" autocomplete="off" placeholder="Мой сайт / статья"></label></div>
+ <div class="reproleaf-project-actions"><button type="button" data-project-save="">Сохранить</button><button type="button" data-project-open="">Открыть</button><button type="button" data-project-new="">Новый проект</button><button type="button" data-project-export="">Скачать проект</button><button type="button" data-project-delete="">Удалить</button></div>
+ <p data-project-status="" class="reproleaf-help" role="status" aria-live="polite"></p>
+ <div data-project-delete-confirm="" class="reproleaf-project-confirm" hidden=""><p>Удалить проект и все его сохранённые проверки? <strong data-project-delete-name=""></strong></p><button type="button" data-project-delete-yes="">Удалить проект</button><button type="button" data-project-delete-cancel="">Отмена</button></div>
+ <details class="reproleaf-project-history"><summary>История и сравнение проверок</summary><p data-project-count="" class="reproleaf-help">Хранятся последние 15 проверок каждого проекта.</p><ul data-project-runs=""></ul>
+ <div class="reproleaf-project-fields"><label>До<select data-run-before="" class="ym-disable-keys" aria-label="Проверка до"></select></label><label>После<select data-run-after="" class="ym-disable-keys" aria-label="Проверка после"></select></label></div><button type="button" data-run-compare="">Сравнить проверки</button><div data-run-comparison=""></div>
+ </details><p class="reproleaf-help">До 20 проектов и 15 последних проверок в каждом. Очистка браузера или приватный режим могут удалить историю. Экспорт содержит введённые тексты и отчёты: проверяйте файл перед передачей другим людям.</p>
+ </section> <pre class="agent-kit-code">node src/cli.mjs check --adapter local-page.json</pre>
+ <label>JSON-отчёт по адаптеру, до 1 МиБ<input type="file" data-dev-report-file="" accept="application/json,.json" class="ym-disable-keys"></label>
+ <label>Или вставьте JSON-отчёт<textarea data-dev-report-text="" rows="8" maxlength="1048576" class="ym-disable-keys"></textarea></label>
+ <button type="button" data-dev-report-import="">Импортировать проверку</button><p data-dev-report-status="" role="status" aria-live="polite"></p><div data-dev-report-output=""></div>
+ </section>

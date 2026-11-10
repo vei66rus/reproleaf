@@ -1,0 +1,44 @@
+name: Toolkit checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: toolkit-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['22', '24']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - name: Install pinned dependencies without package scripts
+        run: npm ci --ignore-scripts
+      - name: Install the test browser
+        run: npx playwright install --with-deps chromium
+      - name: Run Node contracts and loopback runner regressions
+        run: npm test
+      - name: Check browser inspection regressions
+        run: npm run test:browser
+      - name: Check application context in both locales
+        run: npm run test:context-browser
+      - name: Check frontend comparisons and HTML export
+        run: npm run test:comparison-browser
+      - name: Check source export boundaries and overwrite protection
+        shell: pwsh
+        run: ./tests/package-export.test.ps1

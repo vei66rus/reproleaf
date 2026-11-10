@@ -1,0 +1,24 @@
+---
+name: mobile-web-review
+description: Reproduce and verify mobile web scroll, overlay, focus, forms, hydration and canvas interaction failures using an existing browser and the Reproleaf CLI or MCP. Use for a concrete UI bug or regression review; not for generic visual redesign.
+---
+
+## Locate the installed CLI
+
+The bundled installer creates `scripts/reproleaf.mjs` and a private toolkit binding inside this skill. Resolve the launcher relative to this `SKILL.md`, not the target project's working directory. Pass its absolute path as one Node argument. Keep the working directory at the target project so relative input files still refer to that project.
+
+Run `node "<absolute-skill-directory>/scripts/reproleaf.mjs" --toolkit-paths` for the absolute CLI and resource paths. If the trusted toolkit checkout moves, reinstall into a new destination or explicitly set `REPROLEAF_ROOT` to its new absolute path. The override selects executable local code, so it must name a trusted checkout. Missing toolkit metadata must not fall back to the target project's `src/cli.mjs`.
+
+Install with the toolkit's `skill install --skill mobile-web-review --dest <skills-directory>` command. Copying only a template `SKILL.md` does not install the launcher. Registered MCP tools can be used independently, but their metadata responses do not execute a browser baseline.
+
+## Review workflow
+
+Turn a reported user-visible failure into a repeatable acceptance check before changing code. Preserve the requested behavior and work in an isolated local checkout when making a fix.
+
+1. **Diagnose stack, render mode and symptom:** Read only allowed project metadata (such as `package.json` dependencies and the target component). Call the `diagnose_project` MCP tool (or `node "<absolute-skill-directory>/scripts/reproleaf.mjs" diagnose --package package.json --symptom "..."`) to select matching verified rules, inspect their applicability, versions, preconditions and limitations, and receive a starter `adapterTemplate`. Keep `unverifiedHeuristics` separate from confirmed acceptance rules.
+2. **Capture baseline evidence:** Customize the selectors in `adapterTemplate` using the `adapterSchema` path returned by `--toolkit-paths` (`control`, `document-overflow`, `canvas-coverage`, `readable-tail`, `focus-occlusion`) and run `node "<absolute-skill-directory>/scripts/reproleaf.mjs" check --adapter <local-file>` against the unedited target page. Retain the current `executionProfile` with `schemaVersion: 2`, initial and final viewport, and final route-state fingerprint `targetStateSha256`. Remote requests require `--allow-network` within the user's actual authorization. Use an isolated production-like preview when the application needs a development HMR WebSocket; the runner blocks WebSockets and non-GET/HEAD requests.
+3. **Separate failures from setup errors:** Keep behavioral failures (`fail`), unsupported scopes (`unsupported`) and setup errors (`setup-error`) distinct. A missing or ambiguous selector is not a passing check. A blocked functional transport, including a development HMR WebSocket, leaves execution incomplete even if every geometry check passes. Preserve `blockedMethods`, `blockedTransports`, runtime errors and the original failure; do not relax execution policy or authorize writes merely to obtain a green report. HTTP routing is not a security sandbox, and GET/HEAD can still have application side effects. Canvas geometry does not prove rendered content; wheel input does not certify touch or physical Safari behavior.
+4. **Apply minimal fix and re-run:** Fix the root cause in the authorized target checkout, then re-run `node "<absolute-skill-directory>/scripts/reproleaf.mjs" check --adapter <local-file>` with the same initial/final viewport, final route state, execution policy and adapter checks. Keep a positive control so disabling a feature cannot satisfy the check accidentally. Starting a preview or preparing a backend copy remains subject to the project's actual data and operation boundaries.
+5. **Compare baseline and post-fix runs:** Call `compare_check_runs` in MCP (or `node "<absolute-skill-directory>/scripts/reproleaf.mjs" compare --before <baseline.json> --after <postfix.json>`) to verify the failure moved to `resolved` without triggering `environmentDiff` changes. Scope includes viewport, browser, adapter/checker hashes, execution policy and final target-state fingerprint. A legacy report without the current execution profile or target-state evidence remains unconfirmed; do not regenerate or relabel historical evidence as if it had recorded these fields.
+
+Return the observed symptom, matched rule ID, change summary, baseline vs post-fix comparison, evidence location and remaining environment limits. Do not claim universal mobile compatibility or performance from these checks.

@@ -1,0 +1,193 @@
+{
+  "schemaVersion": 1,
+  "scope": "Location metadata only; examples are not a recommendation-accuracy benchmark.",
+  "cases": [
+    {
+      "id": "ascii-literal",
+      "candidate": {
+        "excerpt": "Use HTTP caching.",
+        "suggestedAnchor": "HTTP caching"
+      },
+      "expected": {
+        "status": "literal-span",
+        "start": 4,
+        "end": 16
+      }
+    },
+    {
+      "id": "astral-prefix",
+      "candidate": {
+        "excerpt": "𝄞 Use HTTP caching.",
+        "suggestedAnchor": "HTTP caching"
+      },
+      "expected": {
+        "status": "literal-span",
+        "start": 6,
+        "end": 18
+      }
+    },
+    {
+      "id": "combining-prefix",
+      "candidate": {
+        "excerpt": "é HTTP",
+        "suggestedAnchor": "HTTP"
+      },
+      "expected": {
+        "status": "literal-span",
+        "start": 3,
+        "end": 7
+      }
+    },
+    {
+      "id": "normalization-is-not-literal",
+      "candidate": {
+        "excerpt": "é HTTP",
+        "suggestedAnchor": "é"
+      },
+      "expected": {
+        "status": "text-edit-required"
+      }
+    },
+    {
+      "id": "case-is-not-literal",
+      "candidate": {
+        "excerpt": "cache policy",
+        "suggestedAnchor": "Cache"
+      },
+      "expected": {
+        "status": "text-edit-required"
+      }
+    },
+    {
+      "id": "whitespace-is-not-literal",
+      "candidate": {
+        "excerpt": "HTTP\ncaching",
+        "suggestedAnchor": "HTTP caching"
+      },
+      "expected": {
+        "status": "text-edit-required"
+      }
+    },
+    {
+      "id": "entity-is-not-literal",
+      "candidate": {
+        "excerpt": "HTTP &amp; caching",
+        "suggestedAnchor": "HTTP & caching"
+      },
+      "expected": {
+        "status": "text-edit-required"
+      }
+    },
+    {
+      "id": "substring-not-word-claim",
+      "candidate": {
+        "excerpt": "concatenate",
+        "suggestedAnchor": "cat"
+      },
+      "expected": {
+        "status": "literal-span",
+        "start": 3,
+        "end": 6
+      }
+    },
+    {
+      "id": "first-repeat",
+      "candidate": {
+        "excerpt": "cache and cache",
+        "suggestedAnchor": "cache"
+      },
+      "expected": {
+        "status": "literal-span",
+        "start": 0,
+        "end": 5
+      }
+    },
+    {
+      "id": "missing-excerpt",
+      "candidate": {
+        "suggestedAnchor": "cache"
+      },
+      "expected": {
+        "status": "unconfirmed"
+      }
+    },
+    {
+      "id": "invalid-excerpt",
+      "candidate": {
+        "excerpt": {
+          "text": "cache"
+        },
+        "suggestedAnchor": "cache"
+      },
+      "expected": {
+        "status": "unconfirmed"
+      }
+    },
+    {
+      "id": "blank-anchor",
+      "candidate": {
+        "excerpt": "cache policy",
+        "suggestedAnchor": " "
+      },
+      "expected": {
+        "status": "unconfirmed"
+      }
+    },
+    {
+      "id": "conflicting-fields",
+      "candidate": {
+        "excerpt": "cache policy",
+        "donorExcerpt": "another policy",
+        "suggestedAnchor": "cache"
+      },
+      "expected": {
+        "status": "unconfirmed"
+      }
+    },
+    {
+      "id": "equal-fields",
+      "candidate": {
+        "excerpt": "cache policy",
+        "donorExcerpt": "cache policy",
+        "suggestedAnchor": "cache"
+      },
+      "expected": {
+        "status": "literal-span",
+        "start": 0,
+        "end": 5
+      }
+    },
+    {
+      "id": "long-excerpt",
+      "candidate": {
+        "excerpt": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "suggestedAnchor": "x"
+      },
+      "expected": {
+        "status": "unconfirmed"
+      }
+    },
+    {
+      "id": "long-anchor",
+      "candidate": {
+        "excerpt": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "suggestedAnchor": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+      },
+      "expected": {
+        "status": "unconfirmed"
+      }
+    },
+    {
+      "id": "codepoint-boundary",
+      "candidate": {
+        "excerpt": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx𝄞",
+        "suggestedAnchor": "𝄞"
+      },
+      "expected": {
+        "status": "literal-span",
+        "start": 999,
+        "end": 1000
+      }
+    }
+  ]
+}

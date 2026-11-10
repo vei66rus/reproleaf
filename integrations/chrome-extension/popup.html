@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Reproleaf Active Tab Inspector</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <main class="rl-ext">
+    <header class="rl-ext-head">
+      <div class="rl-ext-brand">
+        <span class="rl-ext-dot"></span>
+        <strong>Reproleaf</strong>
+        <code>activeTab</code>
+      </div>
+      <span class="rl-ext-badge">Local-only</span>
+    </header>
+    <p class="rl-ext-note">Чтение текущей вкладки выполняется только по нажатию кнопки. Фоновый сбор истории и сетевая отправка отключены.</p>
+    <div class="rl-ext-actions">
+      <button type="button" id="inspect-btn" class="rl-ext-primary">Проверить активную вкладку</button>
+      <button type="button" id="copy-packet-btn" class="rl-ext-secondary" disabled>Скопировать JSON-пакет</button>
+    </div>
+    <p id="status" class="rl-ext-status" role="status" aria-live="polite"></p>
+    <section id="results" class="rl-ext-results" hidden>
+      <div id="metrics" class="rl-ext-metrics"></div>
+      <ul id="findings" class="rl-ext-findings"></ul>
+    </section>
+  </main>
+  <script src="popup.js"></script>
+</body>
+</html>

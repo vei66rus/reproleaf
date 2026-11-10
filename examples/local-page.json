@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "url": "http://127.0.0.1:4179/fixtures/modal-close-unreachable/?variant=fixed",
+  "viewport": {"width":390,"height":844},
+  "steps": [
+    {"action":"click","selector":"[data-open]"},
+    {"action":"scroll","selector":"[data-scroll]","edge":"end"}
+  ],
+  "checks": [
+    {"id":"read-details","type":"readable-tail","selector":"[data-scroll]","tail":"[data-scroll] p:last-child","close":"[data-close]"},
+    {"id":"close-reachable","type":"control","selector":"[data-close]"},
+    {"id":"page-width","type":"document-overflow"}
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "applications": [
+    {"id":"legacy","label":"Previous frontend","dependencies":{"nuxt":"4"}},
+    {"id":"site","label":"Current public site","dependencies":{"astro":"7","vue":"3","react":"19"}}
+  ],
+  "symptom":"Disclosure state resets during hydration",
+  "interaction":{"hydratesServerHtml":true}
+}

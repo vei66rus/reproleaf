@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+message: "Cite the version and the relevant check or reproduction case when using this toolkit."
+type: software
+title: Reproleaf
+version: 0.7.0
+date-released: 2026-11-10
+authors:
+  - family-names: Volkov
+    given-names: Evgenii
+url: "https://evolkov.tech/tools/reproleaf-methodology"
+license: MIT
+abstract: "Deterministic editorial checks, private link-review workflows and reproducible web-interface checks with explicit evidence and coverage limits."

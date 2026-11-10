@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "locale": "en",
+  "market": "Synthetic demonstration, not search research",
+  "primaryQuery": "grid cells",
+  "readerTask": "Count the cells in a two-by-two grid.",
+  "article": {
+    "title": "Count the cells in a two-by-two grid",
+    "description": "Multiply two rows by two columns to count four cells.",
+    "h1Mode": "markdown",
+    "markdown": "# Count grid cells\n\nA two-by-two grid has four cells.\n\n## Calculation\n\nMultiply two rows by two columns: 2 × 2 = 4. See the [calculation notes](/guide/calculation)."
+  },
+  "sources": [],
+  "claims": [
+    {
+      "id": "cell-count",
+      "text": "A two-by-two grid has four cells.",
+      "sourceIds": [],
+      "kind": "calculation",
+      "calculation": {
+        "artifactSha256": "8d2d3eee7e47371d5bdfa2e4405da2a21127139da40a14586381273791e74dd1",
+        "assumptions": "Exactly two rows and two columns.",
+        "reproduction": "Multiply 2 by 2; the saved artifact is examples/calculation.json."
+      }
+    }
+  ],
+  "sitePaths": [
+    "/guide/calculation"
+  ],
+  "glossary": [
+    {
+      "canonical": "grid cell",
+      "prohibitedVariants": [
+        "grid slot"
+      ]
+    }
+  ],
+  "reviewedSections": [
+    "Calculation"
+  ]
+}
