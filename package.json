@@ -1,6 +1,6 @@
 {
   "name": "reproleaf",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "private": true,
   "type": "module",
   "description": "Installable agent workflows, MCP and CLI for mobile web checks and evidence-backed editorial review.",

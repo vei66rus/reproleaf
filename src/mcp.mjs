@@ -15,8 +15,9 @@ import {diagnoseSchema,diagnoseProject} from './diagnose-project.mjs';
 import {compareReports} from './history.mjs';
 import {getSiteProjectContext,siteProjectInputSchema,getProjectTasks,updateProjectTask,projectTaskUpdateSchema} from './site-project.mjs';
 import {caseCitationUrl,listCheckRules,getCheckRule,listCheckRulesSchema,getCheckRuleSchema} from './check-rules.mjs';
+import {getServerInstructions} from './server-instructions.mjs';
 export function createServer({publicMode=process.env.REPROLEAF_PUBLIC_MCP==='1',siteProjectOptions={}}={}){
-const server=new McpServer({name:'reproleaf',version},{maxToolInputElements:400000});
+const server=new McpServer({name:'reproleaf',version},{maxToolInputElements:400000,instructions:getServerInstructions({publicMode})});
 const annotations={readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false};
 const id=z.enum(catalog.cases.map(c=>c.id));
 const response=data=>({content:[{type:'text',text:JSON.stringify(data,null,2)}]});

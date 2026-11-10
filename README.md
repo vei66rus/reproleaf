@@ -4,11 +4,17 @@ A local toolkit with installable agent skills, a local CLI, an HTTP JSON API, an
 
 This is a synthetic regression suite and structural diagnostic toolkit, not a search ranking predictor or autonomous website crawler.
 
-## Version 0.7.0: local review candidate
+## Version 0.7.1
+
+[Download the source kit, WordPress helper or standalone browser workspace](https://github.com/vei66rus/reproleaf/releases/tag/v0.7.1). Choose the source kit for local CLI/MCP, the helper for WordPress admin, or the browser workspace for a self-hosted static interface. [Report a reproducible issue](https://github.com/vei66rus/reproleaf/issues) with synthetic data; [contribution requirements](CONTRIBUTING.md) describe the acceptance boundary.
 
 Use the browser workspace, CLI or MCP to inspect article structure, observed internal links and mobile interface behavior. The source includes guarded skill installation, execution-policy and final-state evidence, exact donor-span validation, and an optional WordPress published-content exporter. WordPress is not required. The exporter adds no frontend tracking, automatic edits or mandatory backlinks.
 
-Unreleased passage retrieval experiments failed independent relevance gates and are excluded from the distribution and public CLI/API/MCP. The existing inventory algorithm remains available. Exact text spans prove text locations, not that a link is useful. See [paragraph evidence and research results](docs/PARAGRAPH-REVIEW.md). Paid semantic review remains disabled pending provider and budget approval. No public repository publication is claimed by this local candidate.
+Unreleased passage retrieval experiments failed independent relevance gates and are excluded from the distribution and public CLI/API/MCP. The existing inventory algorithm remains available. Exact text spans prove text locations, not that a link is useful. See [paragraph evidence and research results](docs/PARAGRAPH-REVIEW.md). Paid semantic review remains disabled pending provider and budget approval. The reviewed source is published at [vei66rus/reproleaf](https://github.com/vei66rus/reproleaf).
+
+The public Streamable HTTP MCP endpoint is `https://evolkov.tech/mcp/reproleaf`. It exposes eleven read-only tools with request and work limits. It has no access to saved private projects, local source files, task mutations or paid models. Supplied article/inventory data is sent to this service when a client invokes a review tool; use local stdio for data that must stay on your computer. See [public gateway limits and hosting boundary](docs/PUBLIC-GATEWAY.md). A remote URL does not install a ChatGPT web integration.
+
+MCP initialization supplies a short shared workflow and an accurate capability note for the active mode. The [official OpenAI MCP guide](https://learn.chatgpt.com/docs/extend/mcp) distinguishes direct local-client connections from ChatGPT web plugins. A remote URL alone does not install a web integration.
 
 ## Run locally
 
@@ -111,7 +117,7 @@ node src/public-evidence.mjs /absolute/path/to/run/report.json /new/review/outpu
 
 The generator verifies known input hashes and dependencies. Missing or stale evidence is labeled `not-run` or `not-current` and publishes no current outcomes. Each versioned output directory rejects changed existing files. Build to a new review directory while editing; copy a reviewed release snapshot once and use a new version for later changes. A package version change invalidates the verifier input hash and requires another run before publication.
 
-The 0.6.1 rule and evidence references above are historical, immutable artifacts. The current 0.7.0 source candidate does not rewrite them or imply a new public evidence release. `docs/PROJECT-CONTEXT.md` explains active application selection without merging legacy and current manifests.
+The 0.6.1 rule and evidence references above are historical, immutable artifacts. The current 0.7.1 release does not rewrite them or imply a new public evidence release. `docs/PROJECT-CONTEXT.md` explains active application selection without merging legacy and current manifests.
 
 ### Saved private site crawl context (available since 0.6.1)
 

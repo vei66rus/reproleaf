@@ -74,17 +74,17 @@ test('local API shares the core and rejects foreign Origin, invalid bodies and e
  }finally{await limitedApi.close();}
  const mcpApi=await startApi({port:0});
  try{
-  const initRes=await (await fetch(mcpApi.url+'/v1/mcp',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'initialize',params:{}})})).json();
+  const initRes=await (await fetch(mcpApi.url+'/v1/mcp',{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json, text/event-stream'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'initialize',params:{protocolVersion:'2025-03-26',capabilities:{},clientInfo:{name:'test-client',version:'1.0'}}})})).json();
   assert.equal(initRes.result.serverInfo.name,'reproleaf-public');
-  const listRes=await (await fetch(mcpApi.url+'/v1/mcp',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:2,method:'tools/list',params:{}})})).json();
+  const listRes=await (await fetch(mcpApi.url+'/v1/mcp',{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json, text/event-stream'},body:JSON.stringify({jsonrpc:'2.0',id:2,method:'tools/list',params:{}})})).json();
   const toolNames=listRes.result.tools.map(t=>t.name);
   assert.equal(toolNames.includes('diagnose_project'),true);
   assert.equal(toolNames.includes('get_latest_evidence'),false);
   assert.equal(toolNames.includes('get_case_source'),false);
-  const callRes=await (await fetch(mcpApi.url+'/v1/mcp',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:3,method:'tools/call',params:{name:'diagnose_project',arguments:{stack:'react',category:'forms'}}})})).json();
+  const callRes=await (await fetch(mcpApi.url+'/v1/mcp',{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json, text/event-stream'},body:JSON.stringify({jsonrpc:'2.0',id:3,method:'tools/call',params:{name:'diagnose_project',arguments:{stack:'react',category:'forms'}}})})).json();
   assert.equal(callRes.result.isError,false);
   assert.match(callRes.result.content[0].text,/async-submit-double-fire/);
-  const restrictedCall=await (await fetch(mcpApi.url+'/v1/mcp',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:4,method:'tools/call',params:{name:'get_latest_evidence',arguments:{id:'nested-scroll-trap'}}})})).json();
+  const restrictedCall=await (await fetch(mcpApi.url+'/v1/mcp',{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json, text/event-stream'},body:JSON.stringify({jsonrpc:'2.0',id:4,method:'tools/call',params:{name:'get_latest_evidence',arguments:{id:'nested-scroll-trap'}}})})).json();
   assert.equal(restrictedCall.error.code,-32601);
  }finally{await mcpApi.close();}
  let releaseSlow;

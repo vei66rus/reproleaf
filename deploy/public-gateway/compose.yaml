@@ -1,0 +1,37 @@
+name: reproleaf-gateway
+services:
+  gateway:
+    image: reproleaf-public-gateway:0.7.1
+    pull_policy: never
+    build:
+      context: ../..
+      dockerfile: deploy/public-gateway/Dockerfile
+    container_name: reproleaf-public-gateway
+    restart: unless-stopped
+    init: true
+    user: '10001:10001'
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 64
+    mem_limit: 256m
+    cpus: 0.5
+    stop_grace_period: 15s
+    logging:
+      driver: json-file
+      options:
+        max-size: '5m'
+        max-file: '2'
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=16m,mode=1777
+    environment:
+      REPROLEAF_GATEWAY_ORIGIN: ${REPROLEAF_PUBLIC_ORIGIN:?Set the exact public HTTPS origin}
+      REPROLEAF_GATEWAY_TRUSTED_PROXY: ${REPROLEAF_TRUSTED_PROXY:?Set the exact Caddy peer IP}
+    networks:
+      gateway_internal:
+        ipv4_address: ${REPROLEAF_GATEWAY_IP:?Set the static service address}
+        aliases: [reproleaf_gateway]
+networks:
+  gateway_internal:
+    external: true
+    name: ${REPROLEAF_GATEWAY_NETWORK:-reproleaf_gateway_internal}

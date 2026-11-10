@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Reproleaf — Blog Link Inventory
  * Description: Analyze published WordPress content locally in the admin workspace and export its link inventory. No frontend output, tracking, automatic edits or forced backlinks.
- * Version: 0.7.0
+ * Version: 0.7.1
  * Requires at least: 6.5
  * Requires PHP: 8.1
  * License: MIT

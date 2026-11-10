@@ -13,6 +13,8 @@ import {findingCodeCatalog,errorCodeCatalog,clientSetups} from './client-setups.
 import {aiReviewRequestSchema,resolveAiConfig,createAiBudgetTracker,runAiReview} from './ai-review.mjs';
 import {sanitizeReportSchema,contributionSchema,sanitizeReportForSharing,prepareContributionPacket} from './public-share.mjs';
 import {caseCitationUrl,listCheckRules,getCheckRule,listCheckRulesSchema,getCheckRuleSchema} from './check-rules.mjs';
+import {publicGatewayLimits,parsePublicRpc,rpcError,assertPublicRequestBudget,proxyClientIdentity,exactOriginAllowed,normalizePeer,acceptsPublicMcp} from './public-gateway-policy.mjs';
+import {getServerInstructions} from './server-instructions.mjs';
 
 const compareInputSchema=z.object({
  before:z.record(z.string(),z.unknown()),
@@ -29,6 +31,7 @@ const caseIdSchema=z.object({id:z.enum(catalog.cases.map(c=>c.id))}).strict();
 
 const precomputedSchemas={
  schemaVersion:1,
+ publicGatewayLimits,
  schemas:{
   editorial:z.toJSONSchema(editorialSchema),
   blog:z.toJSONSchema(blogSchema),
@@ -51,6 +54,8 @@ const precomputedSchemas={
  }
 };
 
+const publicBlogSchema=blogSchema.extend({pages:blogSchema.shape.pages.max(publicGatewayLimits.blogPages)});
+const publicEditorialSchema=editorialSchema.extend({article:editorialSchema.shape.article.extend({markdown:z.string().min(1).max(publicGatewayLimits.markdown)})});
 const publicMcpTools=[
  {name:'list_check_rules',description:'List deterministic check rules, inputs, limitations and methodology citations.',inputSchema:z.toJSONSchema(listCheckRulesSchema),annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}},
  {name:'get_check_rule',description:'Read one bundled check rule by domain-qualified ID.',inputSchema:z.toJSONSchema(getCheckRuleSchema),annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}},
@@ -58,8 +63,8 @@ const publicMcpTools=[
  {name:'get_case',description:'Get symptom, preconditions, acceptance condition and limitations for a known case.',inputSchema:z.toJSONSchema(caseIdSchema),annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}},
  {name:'list_workflows',description:'List generalized Reproleaf workflows and their automation limits.',inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}},
  {name:'diagnose_project',description:'Rank candidate checks from supplied application metadata. Select activeApplication when several applications exist. Rendering mode and preconditions remain unconfirmed unless supplied; no repository files are read and no bugs are verified.',inputSchema:precomputedSchemas.schemas.diagnose,annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}},
- {name:'review_editorial_packet',description:'Check supplied article metadata, headings, links, claims and glossary rules.',inputSchema:{type:'object',properties:{packet:precomputedSchemas.schemas.editorial},required:['packet'],additionalProperties:false},annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}},
- {name:'audit_blog_links',description:'Audit an inline supplied blog inventory without server file access.',inputSchema:{type:'object',properties:{inventory:precomputedSchemas.schemas.blog},required:['inventory'],additionalProperties:false},annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}},
+ {name:'review_editorial_packet',description:'Check supplied article evidence within public text/glossary work limits. No source fetching or semantic guarantee.',inputSchema:{type:'object',properties:{packet:z.toJSONSchema(publicEditorialSchema)},required:['packet'],additionalProperties:false},annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}},
+ {name:'audit_blog_links',description:'Audit inline inventory only: at most 100 pages, 10000 links and 200000 supplied text units. No server files or crawling.',inputSchema:{type:'object',properties:{inventory:z.toJSONSchema(publicBlogSchema)},required:['inventory'],additionalProperties:false},annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}},
  {name:'compare_check_runs',description:'Compare baseline and post-fix check reports.',inputSchema:z.toJSONSchema(compareInputSchema),annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}},
  {name:'get_schemas',description:'Return versioned JSON schemas, finding codes and error codes.',inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}},
  {name:'get_client_setups',description:'Return verified client setup configurations and connection checks.',inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}}
@@ -71,7 +76,7 @@ function handlePublicMcpRpc(rpc){
  }
  const id=rpc.id??null;
  if(rpc.method==='initialize'){
-  return {jsonrpc:'2.0',id,result:{protocolVersion:'2025-03-26',capabilities:{tools:{listChanged:false}},serverInfo:{name:'reproleaf-public',version}}};
+  return {jsonrpc:'2.0',id,result:{protocolVersion:'2025-03-26',capabilities:{tools:{listChanged:false}},serverInfo:{name:'reproleaf-public',version},instructions:getServerInstructions({publicMode:true})}};
  }
  if(rpc.method==='notifications/initialized'||rpc.method==='ping'){
   return {jsonrpc:'2.0',id,result:{}};
@@ -82,6 +87,8 @@ function handlePublicMcpRpc(rpc){
  if(rpc.method==='tools/call'){
   const toolName=rpc.params?.name,args=rpc.params?.arguments||{};
   try{
+   if(['list_workflows','get_schemas','get_client_setups'].includes(toolName))z.object({}).strict().parse(args);
+   if(['review_editorial_packet','audit_blog_links'].includes(toolName))z.object({[toolName==='audit_blog_links'?'inventory':'packet']:z.unknown()}).strict().parse(args);
    let data;
    if(toolName==='list_cases'){
     const {query,limit,offset}=listCasesInputSchema.parse(args);
@@ -121,21 +128,40 @@ function handlePublicMcpRpc(rpc){
  return {jsonrpc:'2.0',id,error:{code:-32601,message:'Method not found'}};
 }
 
-export async function startApi({port=4180,maxBytes=1048576,maxConcurrent=8,rateLimitPerMinute=120,requestTimeoutMs=10000,allowedHosts=[],allowedOrigins=[],beforeProcess,aiOptions={}}={}){
+function handlePublicMcpHttp(input){
+ try{assertPublicRequestBudget(input);}catch(error){return {status:400,body:rpcError(input?.id,error.rpcCode||-32600,error.message)};}
+ const batch=Array.isArray(input),responses=[];
+ for(const item of batch?input:[input]){
+  try{
+   const parsed=parsePublicRpc(item);if(parsed.notification)continue;
+   if(batch&&parsed.rpc.method==='initialize'){responses.push(rpcError(item.id,-32600,'Initialize cannot be batched'));continue;}
+   if(parsed.rpc.method.startsWith('notifications/')){responses.push(rpcError(item.id,-32600,'Notifications must not have an id'));continue;}
+   responses.push(handlePublicMcpRpc(parsed.rpc));
+  }catch(error){responses.push(rpcError(item?.id,error.rpcCode||-32600,error.message));}
+ }
+ return responses.length?{status:200,body:batch?responses:responses[0]}:{status:202};
+}
+
+export async function startApi({port=4180,listenHost='127.0.0.1',publicGatewayOnly=false,maxBytes=1048576,maxConcurrent=8,rateLimitPerMinute=120,requestTimeoutMs=10000,allowedHosts=[],allowedOrigins=[],trustedProxyPeers=[],maxRateBuckets=1000,beforeProcess,aiOptions={}}={}){
+ if(typeof publicGatewayOnly!=='boolean'||!['127.0.0.1','::1','0.0.0.0'].includes(listenHost))throw Error('Invalid API binding policy');
+ if(listenHost==='0.0.0.0'&&!publicGatewayOnly)throw Error('Non-loopback binding requires publicGatewayOnly');
+ if(!Number.isSafeInteger(maxRateBuckets)||maxRateBuckets<1||maxRateBuckets>100000)throw Error('Invalid rate bucket limit');
+ if(!Array.isArray(trustedProxyPeers)||trustedProxyPeers.length>32||trustedProxyPeers.some(peer=>!normalizePeer(peer)))throw Error('Trusted proxy peers must be explicit IP literals');
  let activeRequests=0;
  const rateWindows=new Map();
- const aiConfig=resolveAiConfig(aiOptions);
- const aiBudgetTracker=aiOptions.budgetTracker||createAiBudgetTracker(aiConfig);
+ const aiConfig=publicGatewayOnly?{enabled:false,apiKey:'',model:'',dailyBudgetUsd:0,inputPricePerMillion:0,outputPricePerMillion:0}:resolveAiConfig(aiOptions);
+ const aiBudgetTracker=publicGatewayOnly?null:aiOptions.budgetTracker||createAiBudgetTracker(aiConfig);
  const getEndpoints=new Set(['/health','/v1/schemas','/v1/cases','/v1/clients','/v1/ai-status']);
  const postEndpoints=new Set(['/v1/editorial','/v1/blog','/v1/diagnose','/v1/compare','/v1/mcp','/v1/ai-review','/v1/sanitize-report','/v1/contribution-preview']);
 
  function checkRateLimit(clientKey){
   const now=Date.now();
-  if(rateWindows.size>1000){
+  if(rateWindows.size>=maxRateBuckets){
    for(const [k,entry]of rateWindows)if(now>=entry.resetAt)rateWindows.delete(k);
   }
   let entry=rateWindows.get(clientKey);
   if(!entry||now>=entry.resetAt){
+   if(!entry&&rateWindows.size>=maxRateBuckets)return {allowed:false,retryAfterSeconds:60};
    entry={count:0,resetAt:now+60000};
    rateWindows.set(clientKey,entry);
   }
@@ -160,18 +186,13 @@ export async function startApi({port=4180,maxBytes=1048576,maxConcurrent=8,rateL
   },requestTimeoutMs);
   res.once('close',()=>clearTimeout(timer));
 
-  const expectedHosts=new Set([`127.0.0.1:${server.address().port}`,`localhost:${server.address().port}`,...allowedHosts]);
+  const expectedHosts=new Set([`127.0.0.1:${server.address().port}`,`[::1]:${server.address().port}`,`localhost:${server.address().port}`,...allowedHosts]);
   if(!expectedHosts.has(req.headers.host)){respond(403,{error:'host-rejected',code:'RL_HOST_REJECTED'});return;}
-  let allowedOrigin=true;
-  try{
-   if(req.headers.origin){
-    const originUrl=new URL(req.headers.origin);
-    allowedOrigin=expectedHosts.has(originUrl.host)||allowedOrigins.includes(req.headers.origin);
-   }
-  }catch{allowedOrigin=false;}
+  const localOrigins=[`http://127.0.0.1:${server.address().port}`,`http://[::1]:${server.address().port}`,`http://localhost:${server.address().port}`];
+  const allowedOrigin=exactOriginAllowed(req.headers.origin,localOrigins,allowedOrigins);
   if(!allowedOrigin){respond(403,{error:'origin-rejected',code:'RL_ORIGIN_REJECTED'});return;}
 
-  const clientKey=req.socket?.remoteAddress||'127.0.0.1';
+  let clientKey;try{clientKey=proxyClientIdentity(req.socket?.remoteAddress,req.headers['x-forwarded-for'],trustedProxyPeers);}catch{respond(400,{error:'invalid-proxy-identity',code:'RL_INVALID_PROXY_IDENTITY'});return;}
   const rate=checkRateLimit(clientKey);
   if(!rate.allowed){
    respond(429,{error:'rate-limit-exceeded',code:'RL_RATE_LIMIT',retryAfterSeconds:rate.retryAfterSeconds},{'Retry-After':String(rate.retryAfterSeconds)});
@@ -183,9 +204,10 @@ export async function startApi({port=4180,maxBytes=1048576,maxConcurrent=8,rateL
   }
 
   const urlPath=(req.url||'').split('?')[0];
+  if(publicGatewayOnly&&!['/v1/mcp','/health'].includes(urlPath)){respond(404,{error:'not-found',code:'RL_NOT_FOUND'});req.resume();return;}
   if(getEndpoints.has(urlPath)){
    if(req.method!=='GET'){res.setHeader('Allow','GET');respond(405,{error:'method-not-allowed',code:'RL_METHOD_NOT_ALLOWED'});return;}
-   if(urlPath==='/health'){respond(200,{name:'reproleaf',mode:'local',version,readOnly:true,limits:{maxBytes,maxConcurrent,rateLimitPerMinute,requestTimeoutMs}});return;}
+   if(urlPath==='/health'){respond(200,{name:'reproleaf',mode:publicGatewayOnly?'public-gateway':'local',version,readOnly:true,...(publicGatewayOnly?{aiEnabled:false}:{}),limits:{maxBytes,maxConcurrent,rateLimitPerMinute,requestTimeoutMs,maxRateBuckets,publicMcp:publicGatewayLimits},timeoutScope:'Request I/O deadline; synchronous analysis is bounded by input quotas, not hard-interrupted.'});return;}
    if(urlPath==='/v1/schemas'){respond(200,precomputedSchemas);return;}
    if(urlPath==='/v1/cases'){respond(200,{schemaVersion:catalog.schemaVersion,status:catalog.status,provenance:catalog.provenance,total:catalog.cases.length,cases:catalog.cases,unverifiedHeuristics:catalog.unverifiedHeuristics||[]});return;}
    if(urlPath==='/v1/clients'){respond(200,{schemaVersion:1,clients:clientSetups});return;}
@@ -198,6 +220,10 @@ export async function startApi({port=4180,maxBytes=1048576,maxConcurrent=8,rateL
 
   if(!postEndpoints.has(urlPath)){respond(404,{error:'not-found',code:'RL_NOT_FOUND'});return;}
   if(req.method!=='POST'){res.setHeader('Allow','POST');respond(405,{error:'post-required',code:'RL_POST_REQUIRED'});return;}
+  if(urlPath==='/v1/mcp'){
+   if(!acceptsPublicMcp(req.headers.accept)){respond(406,rpcError(null,-32600,'Accept must include application/json and text/event-stream'));return;}
+   if(req.headers['mcp-protocol-version']&&req.headers['mcp-protocol-version']!=='2025-03-26'){respond(400,rpcError(null,-32600,'Unsupported MCP protocol version'));return;}
+  }
   if(!/^application\/json(?:;|$)/i.test(req.headers['content-type']||'')){respond(415,{error:'application-json-required',code:'RL_JSON_REQUIRED'});return;}
   if(Number(req.headers['content-length'])>maxBytes){respond(413,{error:'body-too-large',code:'RL_BODY_TOO_LARGE'});req.resume();return;}
 
@@ -215,7 +241,7 @@ export async function startApi({port=4180,maxBytes=1048576,maxConcurrent=8,rateL
    if(timedOut)return;
    const input=JSON.parse(Buffer.concat(chunks).toString('utf8'));
    if(urlPath==='/v1/mcp'){
-    respond(200,handlePublicMcpRpc(input));
+    const outcome=handlePublicMcpHttp(input);if(outcome.status===202){res.writeHead(202,{'Cache-Control':'no-store'});res.end();}else respond(outcome.status,outcome.body);
     return;
    }
    if(urlPath==='/v1/ai-review'){
@@ -239,6 +265,7 @@ export async function startApi({port=4180,maxBytes=1048576,maxConcurrent=8,rateL
    }
    respond(200,result);
   }catch(error){
+   if(urlPath==='/v1/mcp'&&error instanceof SyntaxError){if(!timedOut&&!res.headersSent)respond(400,rpcError(null,-32700,'Parse error'));return;}
    const errCode=error.code||'RL_INVALID_INPUT';
    if(!timedOut&&!res.headersSent)respond(error.status||400,{error:errCode==='RL_INVALID_INPUT'?'invalid-input':errCode,code:errCode,message:error.message,issues:error.issues?.slice(0,30).map(i=>({path:Array.isArray(i.path)?i.path.join('.'):String(i.path||''),code:i.code,message:i.message}))});
   }finally{
@@ -247,7 +274,7 @@ export async function startApi({port=4180,maxBytes=1048576,maxConcurrent=8,rateL
  });
  server.requestTimeout=requestTimeoutMs;
  server.headersTimeout=requestTimeoutMs;
- await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(port,'127.0.0.1',resolve);});
- return {server,url:`http://127.0.0.1:${server.address().port}`,close:()=>new Promise((resolve,reject)=>server.close(e=>e?reject(e):resolve()))};
+ await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(port,listenHost,resolve);});
+ return {server,url:`http://${listenHost==='::1'?'[::1]':'127.0.0.1'}:${server.address().port}`,close:()=>new Promise((resolve,reject)=>server.close(e=>e?reject(e):resolve()))};
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){const api=await startApi();console.log(`Reproleaf local API: ${api.url}`);}

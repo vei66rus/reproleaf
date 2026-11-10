@@ -13,7 +13,7 @@ function Assert-Rejected([scriptblock]$Call,[string]$MessagePattern){
 }
 try{
   New-Item -ItemType Directory -Path $fixtureRoot -Force | Out-Null
-  foreach($relative in @('README.md','CONTRIBUTING.md','SECURITY.md','CHANGELOG.md','LICENSE','CITATION.cff','.gitignore','.env.example','package.json','package-lock.json','docs/SITE-CONTEXT.md','docs/PROJECT-CONTEXT.md','docs/PARAGRAPH-REVIEW.md','.github/workflows/ci.yml')){
+  foreach($relative in @('README.md','CONTRIBUTING.md','SECURITY.md','CHANGELOG.md','LICENSE','CITATION.cff','.dockerignore','deploy/public-gateway/Dockerfile','deploy/public-gateway/compose.yaml','deploy/public-gateway/launch.mjs','deploy/public-gateway/Caddyfile.example','.gitignore','.env.example','package.json','package-lock.json','docs/SITE-CONTEXT.md','docs/PROJECT-CONTEXT.md','docs/PARAGRAPH-REVIEW.md','docs/PUBLIC-GATEWAY.md','.github/workflows/ci.yml')){
     $file=Join-Path $fixtureRoot $relative;New-Item -ItemType Directory -Path (Split-Path -Parent $file) -Force | Out-Null
     [IO.File]::WriteAllText($file,($relative -eq '.gitignore' ? ".env`nprivate/`nartifacts/`n" : 'Public test fixture.'))
   }
@@ -27,7 +27,7 @@ try{
   $preview=(& $fixtureScript -Destination $zipPath -DryRun) | ConvertFrom-Json
   Assert-Export ($preview.DryRun -and $preview.Entries -contains '.gitignore' -and $preview.Entries -contains '.env.example') 'Source preview must include ignore rules and the empty environment template'
   Assert-Export ($preview.Entries -contains '.github/workflows/ci.yml') 'Only the reviewed standalone CI workflow must be included explicitly'
-  Assert-Export ($preview.Entries -contains 'docs/PARAGRAPH-REVIEW.md' -and $preview.Entries -contains 'CITATION.cff') 'Research limitations and citation metadata must be included in source review'
+  Assert-Export ($preview.Entries -contains 'docs/PARAGRAPH-REVIEW.md' -and $preview.Entries -contains 'docs/PUBLIC-GATEWAY.md' -and $preview.Entries -contains 'CITATION.cff') 'Research/gateway limitations and citation metadata must be included in source review'
   Assert-Export (-not (Test-Path -LiteralPath $zipPath)) 'Dry run must not create an archive'
   Assert-Export (@($preview.Entries | Where-Object { $_ -eq '.env' -or $_ -like 'private/*' }).Count -eq 0) 'Private root data must not enter the preview'
   $created=(& $fixtureScript -Destination $zipPath) | ConvertFrom-Json

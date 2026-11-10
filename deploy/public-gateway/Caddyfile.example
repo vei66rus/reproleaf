@@ -1,0 +1,21 @@
+# Merge these handlers into the existing HTTPS site; preserve its other routes.
+handle /mcp/reproleaf {
+    header Cache-Control "no-store"
+    header X-Robots-Tag "noindex, nofollow"
+    request_body {
+        max_size 1048576
+    }
+    rewrite * /v1/mcp
+    reverse_proxy reproleaf_gateway:4180 {
+        header_up Host 127.0.0.1:4180
+        header_up X-Forwarded-For {remote_host}
+        header_up -Cookie
+        header_up -Authorization
+        header_up -X-Reproleaf-Project-Token
+        transport http {
+            dial_timeout 3s
+            response_header_timeout 8s
+        }
+    }
+}
+# Keep the existing site's fallback handler after the exact MCP handler.

@@ -59,7 +59,7 @@ test('generated public example packets validate and same-version assets reject c
 });
 test('public MCP gateway serves the same bundled rule catalog without operator credentials',async()=>{
  const api=await startApi({port:0});try{
-  const rpc=async(method,params)=>(await(await fetch(api.url+'/v1/mcp',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method,params})})).json());
+  const rpc=async(method,params)=>(await(await fetch(api.url+'/v1/mcp',{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json, text/event-stream'},body:JSON.stringify({jsonrpc:'2.0',id:1,method,params})})).json());
   const names=(await rpc('tools/list',{})).result.tools.map(tool=>tool.name);assert.ok(names.includes('list_check_rules')&&names.includes('get_check_rule'));assert.ok(!names.includes('get_site_project_context'));
   const rule=JSON.parse((await rpc('tools/call',{name:'get_check_rule',arguments:{id:'public-html:canonical',language:'en'}})).result.content[0].text);assert.equal(rule.id,'public-html:canonical');assert.match(rule.doesNotEstablish,/Google/);
  }finally{await api.close();}

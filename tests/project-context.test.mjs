@@ -51,7 +51,7 @@ test('positive metadata still cannot claim a verified bug',()=>{
 
 test('HTTP API and public MCP share application selection and exclusions',async()=>{
  const api=await startApi({port:0});try{
-  const post=async(route,input)=>(await(await fetch(api.url+route,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(input)})).json());
+  const post=async(route,input)=>(await(await fetch(api.url+route,{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json, text/event-stream'},body:JSON.stringify(input)})).json());
   const pending=await post('/v1/diagnose',{applications});assert.equal(pending.status,'needs-application-selection');assert.equal(pending.adapterTemplate,null);
   const result=await post('/v1/mcp',{jsonrpc:'2.0',id:1,method:'tools/call',params:{name:'diagnose_project',arguments:{applications,activeApplication:'active',interaction:{hydratesServerHtml:false}}}});const selected=JSON.parse(result.result.content[0].text);assert.equal(selected.selectedApplication,'active');assert(selected.matchedRules.every(r=>r.category!=='hydration'));
  }finally{await api.close();}

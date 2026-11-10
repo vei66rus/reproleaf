@@ -10,7 +10,7 @@ const jobId='54fc8de9-5cb7-4d7f-8bed-201d5b061410',token='a'.repeat(64),key='a'.
 const env={REPROLEAF_SITE_ENDPOINT:'https://evolkov.tech/wp-json/evolkov/v1/reproleaf-crawl',REPROLEAF_SITE_PROJECT_TOKEN:token,REPROLEAF_SITE_JOB_ID:jobId};
 const task=()=>({key,url:'https://example.org/a?private=1',code:'html-title',severity:'attention',observedState:'observed',decision:'todo',note:`Review ${token}`,message:'Missing title',suggestion:'Supply a descriptive title',firstSeen:'2026-11-09 10:00:00 UTC',lastSeen:'2026-11-09 11:00:00 UTC',firstJobId:jobId,lastJobId:jobId,lastEvidence:{jobId,scanRecordId:null,checkStatus:'attention'},private:token});
 const list=tasks=>({ok:true,scope:'private-project-history',tasks,total:tasks.length,limit:500,truncated:false});
-const json=data=>new Response(JSON.stringify(data),{headers:{'Content-Type':'application/json'}});
+const json=data=>new Response(JSON.stringify(data),{headers:{'Content-Type':'application/json',Accept:'application/json, text/event-stream'}});
 const code=expected=>error=>error.code===expected&&!error.message.includes(token);
 test('task reads use header authentication and GET only, preserve observed state and redact notes',async()=>{
  const requests=[];
@@ -70,7 +70,7 @@ test('public mode and gateway cannot access operator task credentials',async()=>
  let calls=0;const options={env,publicMode:true,fetchImpl:async()=>{calls++;return json(list([]));}};
  await assert.rejects(getProjectTasks({jobId},options),code('RL_SITE_PRIVATE_TOOL'));await assert.rejects(updateProjectTask({key,decision:'todo',note:''},options),code('RL_SITE_PRIVATE_TOOL'));assert.equal(calls,0);
  const api=await startApi({port:0});try{
-  const rpc=async(method,params)=>(await(await fetch(api.url+'/v1/mcp',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method,params})})).json());
+  const rpc=async(method,params)=>(await(await fetch(api.url+'/v1/mcp',{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json, text/event-stream'},body:JSON.stringify({jsonrpc:'2.0',id:1,method,params})})).json());
   const names=(await rpc('tools/list',{})).result.tools.map(tool=>tool.name);assert.equal(names.includes('get_project_tasks'),false);assert.equal(names.includes('update_project_task'),false);assert.equal((await rpc('tools/call',{name:'update_project_task',arguments:{jobId,key,decision:'todo',note:''}})).error.code,-32601);
  }finally{await api.close();}
 });

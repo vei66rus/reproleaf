@@ -2,7 +2,7 @@ cff-version: 1.2.0
 message: "Cite the version and the relevant check or reproduction case when using this toolkit."
 type: software
 title: Reproleaf
-version: 0.7.0
+version: 0.7.1
 date-released: 2026-11-10
 authors:
   - family-names: Volkov

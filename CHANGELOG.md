@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.7.1 (2026-11-10)
+
+- Return empty 202 responses for accepted notifications and validate JSON-RPC IDs, initialization, bounded batches, Accept and protocol headers.
+- Enforce exact origin scheme/authority and trust forwarded identities only behind explicit peer IP allowlists.
+- Require public-only route isolation for wildcard binding; disable AI configuration and ledger initialization in that mode regardless of ambient settings.
+- Cap active rate buckets and reject excessive public input complexity before algorithm dispatch; document that request timeouts do not interrupt synchronous CPU work.
+- Verify the eleven-tool public gateway with the official MCP client SDK and retain all private/file/mutation denials.
+- Remove the inherited browser-connector promise; a remote URL alone does not install a ChatGPT web integration.
+- Keep frozen 0.7.0 archives and historical rule/evidence references unchanged.
+- Supply a non-root container template and a verified hosted read-only Streamable HTTP endpoint, isolated from WordPress and private project data.
+
 ## 0.7.0 (2026-11-10, local review candidate)
 
 - Bind installed skills to the configured toolkit root so commands work from a separate project directory.

@@ -169,7 +169,7 @@ test('public mode cannot use operator server credentials or expose the private t
  const client=new Client({name:'public-site-contract',version:'1.0.0'}),transport=new StdioClientTransport({command:process.execPath,args:[path.join(root,'src/mcp.mjs')],env:{...process.env,...env,REPROLEAF_PUBLIC_MCP:'1'},stderr:'pipe'});
  try{await client.connect(transport);assert.equal((await client.listTools()).tools.some(tool=>tool.name==='get_site_project_context'),false);await assert.rejects(client.callTool({name:'get_site_project_context',arguments:{jobId}}),/not found/);}finally{await client.close();}
  const api=await startApi({port:0});
- try{const response=await fetch(`${api.url}/v1/mcp`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'tools/list',params:{}})});const body=await response.json();assert.equal(body.result.tools.some(tool=>tool.name==='get_site_project_context'),false);}finally{await api.close();}
+ try{const response=await fetch(`${api.url}/v1/mcp`,{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json, text/event-stream'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'tools/list',params:{}})});const body=await response.json();assert.equal(body.result.tools.some(tool=>tool.name==='get_site_project_context'),false);}finally{await api.close();}
 });
 
 test('private MCP registration executes the saved-context tool with injected transport and read-only annotations',async()=>{

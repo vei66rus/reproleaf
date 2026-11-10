@@ -111,12 +111,12 @@ export const clientSetups=[
  },
  {
   id:'chatgpt',
-  name:'ChatGPT Web / Custom MCP',
+  name:'ChatGPT Web / Report Handoff',
   icon:'chatgpt',
-  connectionKind:'prompt-handoff-or-custom-mcp',
+  connectionKind:'prompt-handoff',
   verifiedLocalStdio:false,
-  configLocation:'Browser prompt handoff or Developer Mode HTTPS MCP connector',
-  configSnippet:'Copy the structured report prompt in the Reproleaf web workspace and paste it into ChatGPT, or connect a self-hosted HTTPS MCP endpoint (/v1/mcp) in ChatGPT Developer Mode.',
+  configLocation:'Manual browser prompt handoff',
+  configSnippet:'Copy the structured report prompt in the Reproleaf web workspace and paste it into ChatGPT. A remote MCP URL alone does not install a ChatGPT web integration; supported app/plugin setup is separate.',
   setupSteps:[
    'Run the deterministic check in the Reproleaf browser workspace first.',
    'Use the Discuss with AI panel to copy the structured report prompt (draft excluded by default unless explicitly checked).',

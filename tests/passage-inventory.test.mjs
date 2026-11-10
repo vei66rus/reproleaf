@@ -24,7 +24,7 @@ test('HTTP blog and MCP ingress reject research modes',async()=>{
  const api=await startApi({port:0});try{
   for(const mode of ['paragraph-v1','paragraph-v2','paragraph-context-v3']){
    const input={...inventory(),recommendationMode:mode},response=await fetch(`${api.url}/v1/blog`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(input)});assert.equal(response.status,400);
-   const rpc=await fetch(`${api.url}/v1/mcp`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'tools/call',params:{name:'audit_blog_links',arguments:{inventory:input}}})});const packet=await rpc.json();assert.ok(packet.error||packet.result?.isError,'MCP must reject research mode');
+   const rpc=await fetch(`${api.url}/v1/mcp`,{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json, text/event-stream'},body:JSON.stringify({jsonrpc:'2.0',id:1,method:'tools/call',params:{name:'audit_blog_links',arguments:{inventory:input}}})});const packet=await rpc.json();assert.ok(packet.error||packet.result?.isError,'MCP must reject research mode');
   }
  }finally{await api.close();}
 });
