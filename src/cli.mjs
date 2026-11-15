@@ -289,6 +289,106 @@ try{
   console.log(JSON.stringify(result,null,2));
   if(!result.ok)process.exitCode=1;
  }
+ else if(command==='serp-audit'){
+  if(!values.file)throw Error('Use serp-audit --file <page.html> [--queries <primaryQuery>] [--url <url>]');
+  const {readFile}=await import('node:fs/promises');
+  const {auditSerpSnippet}=await import('./serp-snippet-audit.mjs');
+  const bytes=await readFile(values.file);
+  if(bytes.length>1048576)throw Error('HTML file exceeds 1 MiB');
+  const result=auditSerpSnippet({html:bytes.toString('utf8'),...(values.queries?{primaryQuery:values.queries}:{}),...(values.url?{url:values.url}:{})});
+  console.log(JSON.stringify(result,null,2));
+  if(!result.ok)process.exitCode=1;
+ }
+ else if(command==='dom-perf-audit'){
+  if(!values.file)throw Error('Use dom-perf-audit --file <page.html>');
+  const {readFile}=await import('node:fs/promises');
+  const {auditDomPerfHints}=await import('./dom-perf-audit.mjs');
+  const bytes=await readFile(values.file);
+  if(bytes.length>1048576)throw Error('HTML file exceeds 1 MiB');
+  const result=auditDomPerfHints({html:bytes.toString('utf8')});
+  console.log(JSON.stringify(result,null,2));
+  if(!result.ok)process.exitCode=1;
+ }
+ else if(command==='cannibalization-audit'){
+  if(!values.file)throw Error('Use cannibalization-audit --file <pages.json>');
+  const {readFile}=await import('node:fs/promises');
+  const {auditCannibalizationMatrix}=await import('./cannibalization-audit.mjs');
+  const bytes=await readFile(values.file);
+  if(bytes.length>1048576)throw Error('Pages JSON file exceeds 1 MiB');
+  const result=auditCannibalizationMatrix(JSON.parse(bytes.toString('utf8')));
+  console.log(JSON.stringify(result,null,2));
+  if(!result.ok)process.exitCode=1;
+ }
+ else if(command==='indexation-audit'){
+  if(!values.file)throw Error('Use indexation-audit --file <pages.json>');
+  const {readFile}=await import('node:fs/promises');
+  const {auditIndexationHygiene}=await import('./indexation-hygiene-audit.mjs');
+  const bytes=await readFile(values.file);
+  if(bytes.length>1048576)throw Error('Pages JSON file exceeds 1 MiB');
+  const result=auditIndexationHygiene(JSON.parse(bytes.toString('utf8')));
+  console.log(JSON.stringify(result,null,2));
+  if(!result.ok)process.exitCode=1;
+ }
+ else if(command==='clarity-audit'){
+  if(!values.file)throw Error('Use clarity-audit --file <article.md> [--locale ru|en]');
+  const {readFile}=await import('node:fs/promises');
+  const {auditEditorialClarity}=await import('./editorial-clarity-audit.mjs');
+  const bytes=await readFile(values.file);
+  if(bytes.length>204800)throw Error('Markdown file exceeds 200 KiB');
+  const result=auditEditorialClarity({markdown:bytes.toString('utf8'),locale:values.locale});
+  console.log(JSON.stringify(result,null,2));
+  if(!result.ok)process.exitCode=1;
+ }
+ else if(command==='answer-first-audit'){
+  if(!values.file)throw Error('Use answer-first-audit --file <article.md|page.html>');
+  const {readFile}=await import('node:fs/promises');
+  const {auditAnswerFirst}=await import('./answer-first-audit.mjs');
+  const bytes=await readFile(values.file);
+  if(bytes.length>204800)throw Error('Input file exceeds 200 KiB');
+  const text=bytes.toString('utf8');
+  const isHtml=/\.html?$/i.test(values.file);
+  const result=auditAnswerFirst(isHtml?{html:text}:{markdown:text});
+  console.log(JSON.stringify(result,null,2));
+  if(!result.ok)process.exitCode=1;
+ }
+ else if(command==='suggest-fixes'){
+  if(!values.file)throw Error('Use suggest-fixes --file <meta.json>');
+  const {readFile}=await import('node:fs/promises');
+  const {suggestSeoFixes}=await import('./fix-generator.mjs');
+  const bytes=await readFile(values.file);
+  if(bytes.length>204800)throw Error('Metadata JSON file exceeds 200 KiB');
+  const result=suggestSeoFixes(JSON.parse(bytes.toString('utf8')));
+  console.log(JSON.stringify(result,null,2));
+ }
+ else if(command==='llms-bundle'){
+  if(!values.file)throw Error('Use llms-bundle --file <bundle-spec.json>');
+  const {readFile}=await import('node:fs/promises');
+  const {buildLlmsBundle}=await import('./llms-bundle.mjs');
+  const bytes=await readFile(values.file);
+  if(bytes.length>2097152)throw Error('Bundle spec JSON file exceeds 2 MiB');
+  const result=buildLlmsBundle(JSON.parse(bytes.toString('utf8')));
+  console.log(JSON.stringify(result,null,2));
+ }
+ else if(command==='llms-budget-audit'){
+  if(!values.file)throw Error('Use llms-budget-audit --file <budget-input.json>');
+  const {readFile}=await import('node:fs/promises');
+  const {auditLlmsBudget}=await import('./llms-budget-audit.mjs');
+  const bytes=await readFile(values.file);
+  if(bytes.length>2097152)throw Error('Budget input JSON file exceeds 2 MiB');
+  const result=auditLlmsBudget(JSON.parse(bytes.toString('utf8')));
+  console.log(JSON.stringify(result,null,2));
+  if(!result.ok)process.exitCode=1;
+ }
+ else if(command==='geo-audit'){
+  if(!values.file)throw Error('Use geo-audit --file <geo-input.json>');
+  const {readFile}=await import('node:fs/promises');
+  const {auditGeoReadiness}=await import('./geo-readiness-audit.mjs');
+  const bytes=await readFile(values.file);
+  if(bytes.length>2097152)throw Error('GEO input JSON file exceeds 2 MiB');
+  const result=auditGeoReadiness(JSON.parse(bytes.toString('utf8')));
+  console.log(JSON.stringify(result,null,2));
+  if(!result.ok)process.exitCode=1;
+ }
  else if(command==='methodology'){
   const sub=positionals[0];
   const {readFile}=await import('node:fs/promises');
@@ -319,6 +419,6 @@ try{
    if(!runReport.ok)process.exitCode=1;
   }else throw Error('Use methodology list | prepare | validate | run-local');
  }
- else if(command==='help'){console.log('Reproleaf\n  node src/cli.mjs list\n  node src/cli.mjs case <id>\n  node src/cli.mjs clients\n  node src/cli.mjs diagnose [--stack <name>] [--render-mode <csr|ssr|ssg|hybrid|islands>] [--symptom <text>] [--category <category>] [--package <package.json> | --context <metadata.json> [--application <id>]]\n  node src/cli.mjs compare --before <report.json> --after <report.json>\n  node src/cli.mjs sanitize --report <report.json>\n  node src/cli.mjs contribute --packet <contribution.json>\n  node src/cli.mjs rewrite-guard --before <file> --after <file> | --packet <json>\n  node src/cli.mjs html-audit --file <page.html> [--url <page URL>]\n  node src/cli.mjs schema-audit --file <page.html> [--url <page URL>]\n  node src/cli.mjs social-audit --file <page.html> [--url <page URL>]\n  node src/cli.mjs crawl-policy [--robots <robots.txt>] [--sitemap <sitemap.xml>] [--site-url <url>]\n  node src/cli.mjs redirect-audit --file <traces.json> | --url <url> --allow-network\n  node src/cli.mjs cocoon-audit --file <inventory.json>\n  node src/cli.mjs hreflang-audit --file <matrix.json>\n  node src/cli.mjs llms-txt audit --file <llms.txt> | generate --file <spec.json>\n  node src/cli.mjs ai-crawler-audit [--robots <robots.txt>] [--file <page.html>] [--url <url>]\n  node src/cli.mjs rag-audit --file <article.md|txt> [--locale <ru|en>]\n  node src/cli.mjs grounding-audit --file <article.md>\n  node src/cli.mjs terminology-audit --file <doc.md> --glossary <glossary.json>\n  node src/cli.mjs hydration-diff --before <raw.html> --after <rendered.html> [--url <url>]\n  node src/cli.mjs batch-audit --dir <directory> [--preset blog|docs|landing|saas] [--format json|csv|sarif] [--output <file>]\n  node src/cli.mjs snapshot --dir <directory> [--output <snapshot.json>]\n  node src/cli.mjs diff --before <baseline.json> --after <current.json>\n  node src/cli.mjs prompt-injection-audit --file <page.html|doc.md>\n  node src/cli.mjs methodology list | prepare | validate | run-local\n  node src/cli.mjs serve [--port 4179]\n  node src/cli.mjs verify --all|--case <id> [--variant both|broken|fixed] [--output <directory>]\n  node src/cli.mjs check --adapter <local JSON file> [--allow-network] [--output <directory>]\n  node src/cli.mjs editorial workflow\n  node src/cli.mjs editorial review --packet <local JSON file>\n  node src/cli.mjs skill install --skill <name> --dest <skills directory>\n  node src/mcp.mjs');}
+ else if(command==='help'){console.log('Reproleaf\n  node src/cli.mjs list\n  node src/cli.mjs case <id>\n  node src/cli.mjs clients\n  node src/cli.mjs diagnose [--stack <name>] [--render-mode <csr|ssr|ssg|hybrid|islands>] [--symptom <text>] [--category <category>] [--package <package.json> | --context <metadata.json> [--application <id>]]\n  node src/cli.mjs compare --before <report.json> --after <report.json>\n  node src/cli.mjs sanitize --report <report.json>\n  node src/cli.mjs contribute --packet <contribution.json>\n  node src/cli.mjs rewrite-guard --before <file> --after <file> | --packet <json>\n  node src/cli.mjs html-audit --file <page.html> [--url <page URL>]\n  node src/cli.mjs schema-audit --file <page.html> [--url <page URL>]\n  node src/cli.mjs social-audit --file <page.html> [--url <page URL>]\n  node src/cli.mjs crawl-policy [--robots <robots.txt>] [--sitemap <sitemap.xml>] [--site-url <url>]\n  node src/cli.mjs redirect-audit --file <traces.json> | --url <url> --allow-network\n  node src/cli.mjs cocoon-audit --file <inventory.json>\n  node src/cli.mjs hreflang-audit --file <matrix.json>\n  node src/cli.mjs llms-txt audit --file <llms.txt> | generate --file <spec.json>\n  node src/cli.mjs ai-crawler-audit [--robots <robots.txt>] [--file <page.html>] [--url <url>]\n  node src/cli.mjs rag-audit --file <article.md|txt> [--locale <ru|en>]\n  node src/cli.mjs grounding-audit --file <article.md>\n  node src/cli.mjs terminology-audit --file <doc.md> --glossary <glossary.json>\n  node src/cli.mjs hydration-diff --before <raw.html> --after <rendered.html> [--url <url>]\n  node src/cli.mjs batch-audit --dir <directory> [--preset blog|docs|landing|saas] [--format json|csv|sarif] [--output <file>]\n  node src/cli.mjs snapshot --dir <directory> [--output <snapshot.json>]\n  node src/cli.mjs diff --before <baseline.json> --after <current.json>\n  node src/cli.mjs prompt-injection-audit --file <page.html|doc.md>\n  node src/cli.mjs serp-audit --file <page.html> [--queries <primaryQuery>] [--url <url>]\n  node src/cli.mjs dom-perf-audit --file <page.html>\n  node src/cli.mjs cannibalization-audit --file <pages.json>\n  node src/cli.mjs indexation-audit --file <pages.json>\n  node src/cli.mjs clarity-audit --file <article.md> [--locale ru|en]\n  node src/cli.mjs answer-first-audit --file <article.md|page.html>\n  node src/cli.mjs suggest-fixes --file <meta.json>\n  node src/cli.mjs llms-bundle --file <bundle-spec.json>\n  node src/cli.mjs llms-budget-audit --file <budget-input.json>\n  node src/cli.mjs geo-audit --file <geo-input.json>\n  node src/cli.mjs methodology list | prepare | validate | run-local\n  node src/cli.mjs serve [--port 4179]\n  node src/cli.mjs verify --all|--case <id> [--variant both|broken|fixed] [--output <directory>]\n  node src/cli.mjs check --adapter <local JSON file> [--allow-network] [--output <directory>]\n  node src/cli.mjs editorial workflow\n  node src/cli.mjs editorial review --packet <local JSON file>\n  node src/cli.mjs skill install --skill <name> --dest <skills directory>\n  node src/mcp.mjs');}
  else throw Error('Unknown command');
 }catch(error){console.error(error.message);process.exitCode=1;}

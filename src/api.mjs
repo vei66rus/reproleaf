@@ -27,6 +27,16 @@ import {groundingAuditSchema,auditClaimGrounding} from './grounding-audit.mjs';
 import {terminologyAuditSchema,auditTerminologyConsistency} from './terminology-audit.mjs';
 import {hydrationDiffSchema,auditRawVsRenderedHtml} from './hydration-diff-audit.mjs';
 import {promptInjectionAuditSchema,auditPromptInjectionAndHiddenText} from './prompt-injection-audit.mjs';
+import {serpSnippetSchema,auditSerpSnippet} from './serp-snippet-audit.mjs';
+import {domPerfAuditSchema,auditDomPerfHints} from './dom-perf-audit.mjs';
+import {cannibalizationAuditSchema,auditCannibalizationMatrix} from './cannibalization-audit.mjs';
+import {indexationHygieneSchema,auditIndexationHygiene} from './indexation-hygiene-audit.mjs';
+import {editorialClaritySchema,auditEditorialClarity} from './editorial-clarity-audit.mjs';
+import {answerFirstSchema,auditAnswerFirst} from './answer-first-audit.mjs';
+import {fixGeneratorSchema,suggestSeoFixes} from './fix-generator.mjs';
+import {llmsBundleSchema,buildLlmsBundle} from './llms-bundle.mjs';
+import {llmsBudgetSchema,auditLlmsBudget} from './llms-budget-audit.mjs';
+import {geoReadinessSchema,auditGeoReadiness} from './geo-readiness-audit.mjs';
 import {listMethodologies,buildMethodologyPacketSchema,buildMethodologyPacket,validateMethodologyResultSchema,validateMethodologyResult} from './methodology-packets.mjs';
 import {caseCitationUrl,listCheckRules,getCheckRule,listCheckRulesSchema,getCheckRuleSchema} from './check-rules.mjs';
 import {publicGatewayLimits,parsePublicRpc,rpcError,assertPublicRequestBudget,proxyClientIdentity,exactOriginAllowed,normalizePeer,acceptsPublicMcp} from './public-gateway-policy.mjs';
@@ -72,6 +82,16 @@ const precomputedSchemas={
   terminologyAudit:z.toJSONSchema(terminologyAuditSchema),
   hydrationDiffAudit:z.toJSONSchema(hydrationDiffSchema),
   promptInjectionAudit:z.toJSONSchema(promptInjectionAuditSchema),
+  serpSnippetAudit:z.toJSONSchema(serpSnippetSchema),
+  domPerfAudit:z.toJSONSchema(domPerfAuditSchema),
+  cannibalizationAudit:z.toJSONSchema(cannibalizationAuditSchema),
+  indexationHygieneAudit:z.toJSONSchema(indexationHygieneSchema),
+  editorialClarityAudit:z.toJSONSchema(editorialClaritySchema),
+  answerFirstAudit:z.toJSONSchema(answerFirstSchema),
+  fixGenerator:z.toJSONSchema(fixGeneratorSchema),
+  llmsBundle:z.toJSONSchema(llmsBundleSchema),
+  llmsBudgetAudit:z.toJSONSchema(llmsBudgetSchema),
+  geoReadinessAudit:z.toJSONSchema(geoReadinessSchema),
   methodologyPacket:z.toJSONSchema(buildMethodologyPacketSchema),
   validateMethodologyResult:z.toJSONSchema(validateMethodologyResultSchema)
  },
@@ -118,6 +138,16 @@ const publicMcpTools=[
  {name:'audit_terminology_consistency',description:'Check entity and terminology consistency across one or more documents against a canonical glossary, aliases and forbidden variants.',inputSchema:z.toJSONSchema(terminologyAuditSchema),annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}},
  {name:'audit_hydration_diff',description:'Compare raw server HTML against client-rendered DOM HTML for CSR-only content, missing H1, canonical/robots mutations and client-only JSON-LD without fetching URLs.',inputSchema:z.toJSONSchema(hydrationDiffSchema),annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}},
  {name:'audit_prompt_injection',description:'Detect hidden CSS/HTML text cloaking and prompt-injection override phrases in HTML or Markdown without network requests.',inputSchema:z.toJSONSchema(promptInjectionAuditSchema),annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}},
+ {name:'audit_serp_snippet',description:'Measure title and meta description pixel widths, detect SERP truncation, H1 duplication and primary query alignment without network requests.',inputSchema:z.toJSONSchema(serpSnippetSchema),annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}},
+ {name:'audit_dom_perf_hints',description:'Check static HTML for Core Web Vitals DOM risks (missing image dimensions, lazy hero images, blocking head scripts, viewport, DOM size/depth) without network requests.',inputSchema:z.toJSONSchema(domPerfAuditSchema),annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}},
+ {name:'audit_cannibalization',description:'Detect keyword cannibalization and high topic/intent token overlap across a matrix of page titles, H1s, headings and primary queries.',inputSchema:z.toJSONSchema(cannibalizationAuditSchema),annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}},
+ {name:'audit_indexation_hygiene',description:'Audit pagination canonicals, tracking/facet query parameters, noindex-canonical conflicts and archive routes across supplied page metadata.',inputSchema:z.toJSONSchema(indexationHygieneSchema),annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}},
+ {name:'audit_editorial_clarity',description:'Audit Markdown drafts for walls of text, overlong sentences, generic AI/filler cliches and list/table scannability.',inputSchema:z.toJSONSchema(editorialClaritySchema),annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}},
+ {name:'audit_answer_first',description:'Audit H2/H3 headings in Markdown or HTML to verify whether the first paragraph delivers a direct answer within word limits without filler preambles.',inputSchema:z.toJSONSchema(answerFirstSchema),annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}},
+ {name:'suggest_seo_fixes',description:'Generate ready-to-paste HTML title, meta description, canonical, OpenGraph/Twitter tags and JSON-LD snippets from supplied page metadata without inventing facts.',inputSchema:z.toJSONSchema(fixGeneratorSchema),annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}},
+ {name:'build_llms_bundle',description:'Build curated llms.txt index and token-capped llms-full.txt bundle from supplied page metadata and markdown.',inputSchema:z.toJSONSchema(llmsBundleSchema),annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}},
+ {name:'audit_llms_budget',description:'Audit llms.txt structure and linked page token footprint against a target context window, detecting duplicate URLs, missing targets and oversized core sections.',inputSchema:z.toJSONSchema(llmsBudgetSchema),annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}},
+ {name:'audit_geo_readiness',description:'Run a composite GEO and AI citation readiness scorecard across AI crawler access, llms.txt, JSON-LD, answer-first structure, RAG chunks and prompt-injection safety.',inputSchema:z.toJSONSchema(geoReadinessSchema),annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}},
  {name:'list_methodologies',description:'List deterministic SEO/GEO review methodologies, sections and scope limits.',inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}},
  {name:'prepare_methodology_packet',description:'Build a SHA-256 bound methodology review packet with prompt and JSON output contract for BYO-model or local Ollama execution.',inputSchema:z.toJSONSchema(buildMethodologyPacketSchema),annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}}
 ];
@@ -201,6 +231,26 @@ function handlePublicMcpRpc(rpc){
     data=auditRawVsRenderedHtml(args);
    }else if(toolName==='audit_prompt_injection'){
     data=auditPromptInjectionAndHiddenText(args);
+   }else if(toolName==='audit_serp_snippet'){
+    data=auditSerpSnippet(args);
+   }else if(toolName==='audit_dom_perf_hints'){
+    data=auditDomPerfHints(args);
+   }else if(toolName==='audit_cannibalization'){
+    data=auditCannibalizationMatrix(args);
+   }else if(toolName==='audit_indexation_hygiene'){
+    data=auditIndexationHygiene(args);
+   }else if(toolName==='audit_editorial_clarity'){
+    data=auditEditorialClarity(args);
+   }else if(toolName==='audit_answer_first'){
+    data=auditAnswerFirst(args);
+   }else if(toolName==='suggest_seo_fixes'){
+    data=suggestSeoFixes(args);
+   }else if(toolName==='build_llms_bundle'){
+    data=buildLlmsBundle(args);
+   }else if(toolName==='audit_llms_budget'){
+    data=auditLlmsBudget(args);
+   }else if(toolName==='audit_geo_readiness'){
+    data=auditGeoReadiness(args);
    }else if(toolName==='list_methodologies'){
     data=listMethodologies();
    }else if(toolName==='prepare_methodology_packet'){
@@ -240,7 +290,7 @@ export async function startApi({port=4180,listenHost='127.0.0.1',publicGatewayOn
  const aiConfig=publicGatewayOnly?{enabled:false,apiKey:'',model:'',dailyBudgetUsd:0,inputPricePerMillion:0,outputPricePerMillion:0}:resolveAiConfig(aiOptions);
  const aiBudgetTracker=publicGatewayOnly?null:aiOptions.budgetTracker||createAiBudgetTracker(aiConfig);
  const getEndpoints=new Set(['/health','/v1/schemas','/v1/cases','/v1/clients','/v1/ai-status','/v1/methodologies']);
- const postEndpoints=new Set(['/v1/editorial','/v1/blog','/v1/diagnose','/v1/compare','/v1/mcp','/v1/ai-review','/v1/sanitize-report','/v1/contribution-preview','/v1/rewrite-guard','/v1/html-audit','/v1/schema-audit','/v1/social-audit','/v1/crawl-policy-audit','/v1/redirect-audit','/v1/cocoon-audit','/v1/hreflang-audit','/v1/llms-txt-audit','/v1/llms-txt-generate','/v1/ai-crawler-audit','/v1/rag-chunk-audit','/v1/grounding-audit','/v1/terminology-audit','/v1/hydration-diff-audit','/v1/prompt-injection-audit','/v1/methodology-packet','/v1/validate-methodology-result']);
+ const postEndpoints=new Set(['/v1/editorial','/v1/blog','/v1/diagnose','/v1/compare','/v1/mcp','/v1/ai-review','/v1/sanitize-report','/v1/contribution-preview','/v1/rewrite-guard','/v1/html-audit','/v1/schema-audit','/v1/social-audit','/v1/crawl-policy-audit','/v1/redirect-audit','/v1/cocoon-audit','/v1/hreflang-audit','/v1/llms-txt-audit','/v1/llms-txt-generate','/v1/ai-crawler-audit','/v1/rag-chunk-audit','/v1/grounding-audit','/v1/terminology-audit','/v1/hydration-diff-audit','/v1/prompt-injection-audit','/v1/serp-snippet-audit','/v1/dom-perf-audit','/v1/cannibalization-audit','/v1/indexation-hygiene-audit','/v1/editorial-clarity-audit','/v1/answer-first-audit','/v1/suggest-seo-fixes','/v1/build-llms-bundle','/v1/audit-llms-budget','/v1/audit-geo-readiness','/v1/methodology-packet','/v1/validate-methodology-result']);
 
  function checkRateLimit(clientKey){
   const now=Date.now();
@@ -364,6 +414,16 @@ export async function startApi({port=4180,listenHost='127.0.0.1',publicGatewayOn
    else if(urlPath==='/v1/terminology-audit')result=auditTerminologyConsistency(input);
    else if(urlPath==='/v1/hydration-diff-audit')result=auditRawVsRenderedHtml(input);
    else if(urlPath==='/v1/prompt-injection-audit')result=auditPromptInjectionAndHiddenText(input);
+   else if(urlPath==='/v1/serp-snippet-audit')result=auditSerpSnippet(input);
+   else if(urlPath==='/v1/dom-perf-audit')result=auditDomPerfHints(input);
+   else if(urlPath==='/v1/cannibalization-audit')result=auditCannibalizationMatrix(input);
+   else if(urlPath==='/v1/indexation-hygiene-audit')result=auditIndexationHygiene(input);
+   else if(urlPath==='/v1/editorial-clarity-audit')result=auditEditorialClarity(input);
+   else if(urlPath==='/v1/answer-first-audit')result=auditAnswerFirst(input);
+   else if(urlPath==='/v1/suggest-seo-fixes')result=suggestSeoFixes(input);
+   else if(urlPath==='/v1/build-llms-bundle')result=buildLlmsBundle(input);
+   else if(urlPath==='/v1/audit-llms-budget')result=auditLlmsBudget(input);
+   else if(urlPath==='/v1/audit-geo-readiness')result=auditGeoReadiness(input);
    else if(urlPath==='/v1/methodology-packet')result=buildMethodologyPacket(input);
    else if(urlPath==='/v1/validate-methodology-result')result=validateMethodologyResult(input);
    else{
