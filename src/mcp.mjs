@@ -15,6 +15,8 @@ import {diagnoseSchema,diagnoseProject} from './diagnose-project.mjs';
 import {compareReports} from './history.mjs';
 import {getSiteProjectContext,siteProjectInputSchema,getProjectTasks,updateProjectTask,projectTaskUpdateSchema} from './site-project.mjs';
 import {caseCitationUrl,listCheckRules,getCheckRule,listCheckRulesSchema,getCheckRuleSchema} from './check-rules.mjs';
+import {rewriteGuardSchema,checkRewritePreservation} from './rewrite-guard.mjs';
+import {htmlAuditSchema,auditHtmlDocument} from './html-audit.mjs';
 import {getServerInstructions} from './server-instructions.mjs';
 export function createServer({publicMode=process.env.REPROLEAF_PUBLIC_MCP==='1',siteProjectOptions={}}={}){
 const server=new McpServer({name:'reproleaf',version},{maxToolInputElements:400000,instructions:getServerInstructions({publicMode})});
@@ -53,6 +55,8 @@ server.registerTool('review_editorial_packet',{description:'Check supplied artic
 server.registerTool('audit_blog_links',{description:'Audit a supplied blog inventory, or the single local file explicitly configured by the operator in REPROLEAF_INVENTORY_FILE. No arbitrary path argument or crawling. Distinguishes internal incoming from backlinks, unresolved from broken, and lexical candidates from semantic judgments.',inputSchema:z.object({inventory:publicMode?blogSchema:blogSchema.optional()}),annotations},async({inventory})=>response(inventory?auditBlog(inventory):publicMode?(()=>{throw Error('Public MCP mode requires an inline inventory object.');})():await auditBlogFile(process.env.REPROLEAF_INVENTORY_FILE)));
 server.registerTool('diagnose_project',{description:'Rank candidate UI checks from supplied metadata. For multiple applications, supply applications and select activeApplication; without selection no adapter is generated. Dependencies do not establish route rendering mode. Supply interaction facts to exclude inapplicable canvas or hydration cases. Candidates require precondition checks and are not observed bugs. No repository files are read.',inputSchema:diagnoseSchema,annotations},async input=>response(diagnoseProject(input)));
 server.registerTool('compare_check_runs',{description:'Compare a baseline and post-fix check report (frontend adapter, editorial or blog graph). Reports resolved, remaining, added and unverified findings and highlights any change in viewport, browser, adapterSha256 or checkerSha256.',inputSchema:z.object({before:z.record(z.string(),z.unknown()),after:z.record(z.string(),z.unknown())}),annotations},async({before,after})=>response(compareReports(before,after)));
+server.registerTool('check_rewrite_preservation',{description:'Check before/after text blocks for preserved numbers, URLs, formulas, code spans and negation/condition markers. Deterministic token checks do not prove semantic preservation.',inputSchema:rewriteGuardSchema,annotations},async input=>response(checkRewritePreservation(input)));
+server.registerTool('audit_html_document',{description:'Audit supplied static HTML for multiple canonicals, hreflang validity, encoding/mojibake, H1-H6 outline and robots meta without fetching URLs.',inputSchema:htmlAuditSchema,annotations},async input=>response(auditHtmlDocument(input)));
 return server;
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){

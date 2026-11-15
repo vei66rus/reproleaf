@@ -22,7 +22,7 @@ before(async()=>{
 });
 after(async()=>{await client?.close();await server?.close();});
 test('MCP lists actual cases, returns clean source, and rejects path injection',async()=>{
- const listing=await client.listTools();assert.equal(listing.tools.length,15);
+ const listing=await client.listTools();assert.equal(listing.tools.length,17);
  const result=JSON.parse((await client.callTool({name:'list_cases',arguments:{query:'phaser'}})).content[0].text);
  assert.equal(result.cases.length,1);assert.equal(result.cases[0].id,'canvas-touch-trap');
  const item=JSON.parse((await client.callTool({name:'get_case',arguments:{id:'nested-scroll-trap'}})).content[0].text);assert.match(item.runCommand,/nested-scroll-trap/);assert.match(item.provenance,/synthetic/);assert.ok(item.applicability);assert.ok(Array.isArray(item.preconditions)&&item.preconditions.length>0);
@@ -93,7 +93,7 @@ test('MCP also negotiates the pinned 2026 protocol and serves read-only tools',a
  const modern=new ModernClient({name:'pilot-modern-check',version:'0.1.0'},{versionNegotiation:{mode:{pin:'2026-07-28'}}});
  const pipe=new ModernTransport({command:process.execPath,args:[path.join(root,'src/mcp.mjs')],stderr:'pipe'});
  try{
-  await modern.connect(pipe);const tools=await modern.listTools();assert.equal(tools.tools.length,15);
+  await modern.connect(pipe);const tools=await modern.listTools();assert.equal(tools.tools.length,17);
   const result=await modern.callTool({name:'get_case',arguments:{id:'canvas-touch-trap'}});
   assert.match(JSON.stringify(result),/canvas-touch-trap/);
  }finally{await modern.close();await pipe.close();}

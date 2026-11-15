@@ -12,6 +12,8 @@ import {catalog,getCase} from './catalog.mjs';
 import {findingCodeCatalog,errorCodeCatalog,clientSetups} from './client-setups.mjs';
 import {aiReviewRequestSchema,resolveAiConfig,createAiBudgetTracker,runAiReview} from './ai-review.mjs';
 import {sanitizeReportSchema,contributionSchema,sanitizeReportForSharing,prepareContributionPacket} from './public-share.mjs';
+import {rewriteGuardSchema,checkRewritePreservation} from './rewrite-guard.mjs';
+import {htmlAuditSchema,auditHtmlDocument} from './html-audit.mjs';
 import {caseCitationUrl,listCheckRules,getCheckRule,listCheckRulesSchema,getCheckRuleSchema} from './check-rules.mjs';
 import {publicGatewayLimits,parsePublicRpc,rpcError,assertPublicRequestBudget,proxyClientIdentity,exactOriginAllowed,normalizePeer,acceptsPublicMcp} from './public-gateway-policy.mjs';
 import {getServerInstructions} from './server-instructions.mjs';
@@ -39,7 +41,9 @@ const precomputedSchemas={
   diagnose:z.toJSONSchema(diagnoseSchema),
   aiReview:z.toJSONSchema(aiReviewRequestSchema),
   sanitizeReport:z.toJSONSchema(sanitizeReportSchema),
-  contribution:z.toJSONSchema(contributionSchema)
+  contribution:z.toJSONSchema(contributionSchema),
+  rewriteGuard:z.toJSONSchema(rewriteGuardSchema),
+  htmlAudit:z.toJSONSchema(htmlAuditSchema)
  },
  findingCodes:findingCodeCatalog,
  errorCodes:errorCodeCatalog,
@@ -67,7 +71,9 @@ const publicMcpTools=[
  {name:'audit_blog_links',description:'Audit inline inventory only: at most 100 pages, 10000 links and 200000 supplied text units. No server files or crawling.',inputSchema:{type:'object',properties:{inventory:z.toJSONSchema(publicBlogSchema)},required:['inventory'],additionalProperties:false},annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}},
  {name:'compare_check_runs',description:'Compare baseline and post-fix check reports.',inputSchema:z.toJSONSchema(compareInputSchema),annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}},
  {name:'get_schemas',description:'Return versioned JSON schemas, finding codes and error codes.',inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}},
- {name:'get_client_setups',description:'Return verified client setup configurations and connection checks.',inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}}
+ {name:'get_client_setups',description:'Return verified client setup configurations and connection checks.',inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}},
+ {name:'check_rewrite_preservation',description:'Check before/after text blocks for preserved numbers, URLs, formulas, code spans and negation/condition markers.',inputSchema:z.toJSONSchema(rewriteGuardSchema),annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}},
+ {name:'audit_html_document',description:'Audit supplied static HTML for canonicals, hreflang, encoding/mojibake, H1-H6 outline and robots meta without fetching URLs.',inputSchema:z.toJSONSchema(htmlAuditSchema),annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}}
 ];
 
 function handlePublicMcpRpc(rpc){
@@ -117,6 +123,10 @@ function handlePublicMcpRpc(rpc){
     data=precomputedSchemas;
    }else if(toolName==='get_client_setups'){
     data={schemaVersion:1,clients:clientSetups};
+   }else if(toolName==='check_rewrite_preservation'){
+    data=checkRewritePreservation(args);
+   }else if(toolName==='audit_html_document'){
+    data=auditHtmlDocument(args);
    }else{
     return {jsonrpc:'2.0',id,error:{code:-32601,message:`Unknown or restricted tool: ${String(toolName)}`}};
    }
@@ -152,7 +162,7 @@ export async function startApi({port=4180,listenHost='127.0.0.1',publicGatewayOn
  const aiConfig=publicGatewayOnly?{enabled:false,apiKey:'',model:'',dailyBudgetUsd:0,inputPricePerMillion:0,outputPricePerMillion:0}:resolveAiConfig(aiOptions);
  const aiBudgetTracker=publicGatewayOnly?null:aiOptions.budgetTracker||createAiBudgetTracker(aiConfig);
  const getEndpoints=new Set(['/health','/v1/schemas','/v1/cases','/v1/clients','/v1/ai-status']);
- const postEndpoints=new Set(['/v1/editorial','/v1/blog','/v1/diagnose','/v1/compare','/v1/mcp','/v1/ai-review','/v1/sanitize-report','/v1/contribution-preview']);
+ const postEndpoints=new Set(['/v1/editorial','/v1/blog','/v1/diagnose','/v1/compare','/v1/mcp','/v1/ai-review','/v1/sanitize-report','/v1/contribution-preview','/v1/rewrite-guard','/v1/html-audit']);
 
  function checkRateLimit(clientKey){
   const now=Date.now();
@@ -259,6 +269,8 @@ export async function startApi({port=4180,listenHost='127.0.0.1',publicGatewayOn
    else if(urlPath==='/v1/diagnose')result=diagnoseProject(input);
    else if(urlPath==='/v1/sanitize-report')result=sanitizeReportForSharing(input);
    else if(urlPath==='/v1/contribution-preview')result=prepareContributionPacket(input);
+   else if(urlPath==='/v1/rewrite-guard')result=checkRewritePreservation(input);
+   else if(urlPath==='/v1/html-audit')result=auditHtmlDocument(input);
    else{
     const parsed=compareInputSchema.parse(input);
     result=compareReports(parsed.before,parsed.after);

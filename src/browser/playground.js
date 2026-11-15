@@ -7,6 +7,7 @@ import {renderDashboard} from './dashboard.mjs';
 import {importSitemap} from './sitemap.mjs';
 import {composeHandoff,providers} from './ai-handoff.mjs';
 import {buildSanitizedReportPayload} from '../sanitize-core.mjs';
+import {exportReportCsv} from '../csv-export.mjs';
 const copy={
  ru:{checking:'Проверяем…',invalid:'Исправьте формат пакета.',failed:'Проверка не завершилась. Попробуйте ещё раз с меньшим текстом.',done:'Структурная проверка завершена.',errors:'Ошибок',warnings:'Замечаний',review:'Факты, полноту ответа и качество источников нужно проверить редактору.',report:'reproleaf-report.json',notSaved:'Изменения ещё не проверены.',packetTooLarge:'Пакет слишком большой: максимум 1 МБ.',json:'Не удалось прочитать JSON. Проверьте формат.',noReport:'Сначала запустите проверку.'},
  en:{checking:'Checking…',invalid:'Fix the packet format.',failed:'The check did not finish. Try again with a smaller draft.',done:'Structural check complete.',errors:'Errors',warnings:'Warnings',review:'Factual support, intent coverage and source quality still need editorial review.',report:'reproleaf-report.json',notSaved:'These changes have not been checked.',packetTooLarge:'The packet is too large: maximum 1 MiB.',json:'Could not parse the JSON packet.',noReport:'Run a check first.'}
@@ -97,6 +98,21 @@ export function mount(root){
    try{await navigator.clipboard.writeText(sanitized.attributionBadge.markdown);status.textContent=language==='ru'?'Очищенный отчёт скачан, бейдж проверки скопирован в буфер обмена.':'Sanitized report downloaded and attribution badge copied to clipboard.';}catch{}
   };
   htmlDownloadBtn.after(sanitizedBtn);
+ }
+ if(htmlDownloadBtn&&!root.querySelector('[data-download-csv]')){
+  const csvBtn=document.createElement('button');
+  csvBtn.type='button';
+  csvBtn.className='agent-kit-download';
+  csvBtn.dataset.downloadCsv='';
+  csvBtn.textContent=language==='ru'?'Экспорт CSV':'Export CSV';
+  csvBtn.onclick=()=>{
+   if(!report){status.textContent=t.noReport;return;}
+   const exported=exportReportCsv({report,kind:report.kind==='blog-graph'?'pages':'findings',projectName:'reproleaf'});
+   const url=URL.createObjectURL(new Blob([exported.csv],{type:'text/csv;charset=utf-8'}));
+   const link=document.createElement('a');link.href=url;link.download=exported.filename;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+   status.textContent=language==='ru'?`CSV выгружен (${exported.rowCount} строк).`:`CSV exported (${exported.rowCount} rows).`;
+  };
+  root.querySelector('[data-download-sanitized]').after(csvBtn);
  }
  const field=name=>form.elements.namedItem(name);
 

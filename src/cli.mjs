@@ -12,7 +12,7 @@ async function readMetadata(file){
  }finally{await handle.close();}
 }
 try{
- const {values,positionals}=parseArgs({args,allowPositionals:true,options:{case:{type:'string'},all:{type:'boolean'},variant:{type:'string',default:'both'},output:{type:'string'},port:{type:'string',default:'4179'},adapter:{type:'string'},'allow-network':{type:'boolean'},packet:{type:'string'},report:{type:'string'},inventory:{type:'string'},skill:{type:'string'},dest:{type:'string'},stack:{type:'string'},'render-mode':{type:'string'},symptom:{type:'string'},category:{type:'string'},package:{type:'string'},context:{type:'string'},application:{type:'string'},'target-url':{type:'string'},before:{type:'string'},after:{type:'string'}}});
+ const {values,positionals}=parseArgs({args,allowPositionals:true,options:{case:{type:'string'},all:{type:'boolean'},variant:{type:'string',default:'both'},output:{type:'string'},port:{type:'string',default:'4179'},adapter:{type:'string'},'allow-network':{type:'boolean'},packet:{type:'string'},report:{type:'string'},file:{type:'string'},url:{type:'string'},inventory:{type:'string'},skill:{type:'string'},dest:{type:'string'},stack:{type:'string'},'render-mode':{type:'string'},symptom:{type:'string'},category:{type:'string'},package:{type:'string'},context:{type:'string'},application:{type:'string'},'target-url':{type:'string'},before:{type:'string'},after:{type:'string'}}});
  if(command==='list'){console.log(JSON.stringify(catalog,null,2));}
  else if(command==='case'){console.log(JSON.stringify(getCase(positionals[0]),null,2));}
  else if(command==='clients'){
@@ -91,6 +91,31 @@ try{
   const bytes=await readFile(values.packet);if(bytes.length>524288)throw Error('Packet exceeds 512 KiB');
   console.log(JSON.stringify(prepareContributionPacket(JSON.parse(bytes)),null,2));
  }
- else if(command==='help'){console.log('Reproleaf\n  node src/cli.mjs list\n  node src/cli.mjs case <id>\n  node src/cli.mjs clients\n  node src/cli.mjs diagnose [--stack <name>] [--render-mode <csr|ssr|ssg|hybrid|islands>] [--symptom <text>] [--category <category>] [--package <package.json> | --context <metadata.json> [--application <id>]]\n  node src/cli.mjs compare --before <report.json> --after <report.json>\n  node src/cli.mjs sanitize --report <report.json>\n  node src/cli.mjs contribute --packet <contribution.json>\n  node src/cli.mjs serve [--port 4179]\n  node src/cli.mjs verify --all|--case <id> [--variant both|broken|fixed] [--output <directory>]\n  node src/cli.mjs check --adapter <local JSON file> [--allow-network] [--output <directory>]\n  node src/cli.mjs editorial workflow\n  node src/cli.mjs editorial review --packet <local JSON file>\n  node src/cli.mjs skill install --skill <name> --dest <skills directory>\n  node src/mcp.mjs');}
+ else if(command==='rewrite-guard'){
+  const {readFile}=await import('node:fs/promises');
+  const {checkRewritePreservation}=await import('./rewrite-guard.mjs');
+  if(values.packet){
+   const bytes=await readFile(values.packet);if(bytes.length>524288)throw Error('Packet exceeds 512 KiB');
+   const result=checkRewritePreservation(JSON.parse(bytes));
+   console.log(JSON.stringify(result,null,2));
+   if(result.status==='blocked_by_preservation_checks')process.exitCode=1;
+  }else if(values.before&&values.after){
+   const [beforeBytes,afterBytes]=await Promise.all([readFile(values.before),readFile(values.after)]);
+   if(beforeBytes.length>204800||afterBytes.length>204800)throw Error('Text input exceeds 200 KiB');
+   const result=checkRewritePreservation({before:beforeBytes.toString('utf8'),after:afterBytes.toString('utf8')});
+   console.log(JSON.stringify(result,null,2));
+   if(result.status==='blocked_by_preservation_checks')process.exitCode=1;
+  }else throw Error('Use rewrite-guard --before <file> --after <file> or --packet <json>');
+ }
+ else if(command==='html-audit'){
+  if(!values.file)throw Error('Use html-audit --file <local HTML file> [--url <page URL>]');
+  const {readFile}=await import('node:fs/promises');
+  const {auditHtmlDocument}=await import('./html-audit.mjs');
+  const bytes=await readFile(values.file);if(bytes.length>1048576)throw Error('HTML file exceeds 1 MiB');
+  const result=auditHtmlDocument({html:bytes.toString('utf8'),...(values.url?{url:values.url}:{})});
+  console.log(JSON.stringify(result,null,2));
+  if(result.summary.errors>0)process.exitCode=1;
+ }
+ else if(command==='help'){console.log('Reproleaf\n  node src/cli.mjs list\n  node src/cli.mjs case <id>\n  node src/cli.mjs clients\n  node src/cli.mjs diagnose [--stack <name>] [--render-mode <csr|ssr|ssg|hybrid|islands>] [--symptom <text>] [--category <category>] [--package <package.json> | --context <metadata.json> [--application <id>]]\n  node src/cli.mjs compare --before <report.json> --after <report.json>\n  node src/cli.mjs sanitize --report <report.json>\n  node src/cli.mjs contribute --packet <contribution.json>\n  node src/cli.mjs rewrite-guard --before <file> --after <file> | --packet <json>\n  node src/cli.mjs html-audit --file <page.html> [--url <page URL>]\n  node src/cli.mjs serve [--port 4179]\n  node src/cli.mjs verify --all|--case <id> [--variant both|broken|fixed] [--output <directory>]\n  node src/cli.mjs check --adapter <local JSON file> [--allow-network] [--output <directory>]\n  node src/cli.mjs editorial workflow\n  node src/cli.mjs editorial review --packet <local JSON file>\n  node src/cli.mjs skill install --skill <name> --dest <skills directory>\n  node src/mcp.mjs');}
  else throw Error('Unknown command');
 }catch(error){console.error(error.message);process.exitCode=1;}
