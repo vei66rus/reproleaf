@@ -105,7 +105,7 @@ export const clientSetups=[
    'Add the reproleaf entry under mcpServers in ~/.gemini/settings.json.',
    'Launch Gemini CLI and run /mcp to inspect the registered tool set and its write boundaries.'
   ],
-  verifyConnection:'In Gemini CLI, execute /mcp. Default local stdio registers 15 tools, including the explicit update_project_task mutation; REPROLEAF_PUBLIC_MCP=1 registers nine read-only tools. The separate HTTP gateway lists 11 read-only tools.',
+  verifyConnection:'In Gemini CLI, execute /mcp. Default local stdio registers 33 tools, including the explicit update_project_task mutation; REPROLEAF_PUBLIC_MCP=1 registers 27 read-only tools. The separate HTTP gateway lists 29 read-only tools.',
   firstUsefulPrompt:'Call review_editorial_packet or diagnose_project to inspect headings, internal links, or mobile UI preconditions.',
   honestyNote:'The stdio process runs locally. Private project tools contact only the operator-configured endpoint when invoked; public mode omits those tools.'
  },
@@ -142,5 +142,39 @@ export const clientSetups=[
   verifyConnection:'Confirm the deterministic JSON report is included in the copied text.',
   firstUsefulPrompt:'Summarize the prioritized fixes from this Reproleaf report while preserving all stated evidence limits.',
   honestyNote:'Web chat handoff only; no direct local MCP bridge is claimed.'
+ },
+ {
+  id:'cursor',
+  name:'Cursor',
+  icon:'cursor',
+  connectionKind:'stdio-mcp',
+  verifiedLocalStdio:true,
+  configLocation:'~/.cursor/mcp.json',
+  configSnippet:'{\n  "mcpServers": {\n    "reproleaf": {\n      "command": "npx",\n      "args": ["-y", "reproleaf", "mcp"]\n    }\n  }\n}',
+  setupSteps:[
+   'Open Cursor Settings -> MCP and add the reproleaf entry to ~/.cursor/mcp.json.',
+   'Or point directly to node /absolute/path/to/reproleaf/src/mcp.mjs for a local checkout.',
+   'Reload MCP servers and verify 33 local tools (or 29 via https://evolkov.tech/mcp/reproleaf).'
+  ],
+  verifyConnection:'Check the green dot next to reproleaf in Cursor MCP settings.',
+  firstUsefulPrompt:'Run audit_html_document and audit_jsonld_schema on the active HTML page.',
+  honestyNote:'Supports both local stdio and Streamable HTTP remote endpoint.'
+ },
+ {
+  id:'windsurf',
+  name:'Windsurf / Antigravity',
+  icon:'windsurf',
+  connectionKind:'stdio-mcp',
+  verifiedLocalStdio:true,
+  configLocation:'~/.codeium/windsurf/mcp_config.json',
+  configSnippet:'{\n  "mcpServers": {\n    "reproleaf": {\n      "serverUrl": "https://evolkov.tech/mcp/reproleaf"\n    }\n  }\n}',
+  setupSteps:[
+   'Add the remote Streamable HTTP serverUrl or local stdio command to mcp_config.json.',
+   'Refresh MCP servers in the IDE.',
+   'Use read-only SEO/GEO audit tools directly in chat.'
+  ],
+  verifyConnection:'Confirm reproleaf tools appear in the MCP tool list.',
+  firstUsefulPrompt:'Call audit_ai_crawler_access with my robots.txt and homepage HTML.',
+  honestyNote:'Remote Streamable HTTP exposes 29 read-only tools with zero local filesystem access.'
  }
 ];

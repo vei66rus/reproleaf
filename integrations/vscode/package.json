@@ -1,0 +1,26 @@
+{
+  "name": "reproleaf-seo-linter",
+  "displayName": "Reproleaf SEO & GEO Linter",
+  "description": "Deterministic HTML, JSON-LD, OpenGraph, Claim Grounding, and Prompt-Injection diagnostics.",
+  "version": "1.0.0",
+  "publisher": "vei66rus",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Linters"
+  ],
+  "activationEvents": [
+    "onLanguage:html",
+    "onLanguage:markdown"
+  ],
+  "main": "./extension.mjs",
+  "contributes": {
+    "commands": [
+      {
+        "command": "reproleaf.auditActiveFile",
+        "title": "Reproleaf: Audit Active File"
+      }
+    ]
+  }
+}

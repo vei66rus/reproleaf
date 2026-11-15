@@ -1,0 +1,26 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-10-17/server.schema.json",
+  "name": "io.github.vei66rus/reproleaf",
+  "description": "Deterministic SEO, GEO, HTML, Schema.org, OpenGraph, AI crawler, and mobile UI verification MCP server.",
+  "repository": {
+    "url": "https://github.com/vei66rus/reproleaf",
+    "source": "github"
+  },
+  "version": "1.0.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "reproleaf",
+      "version": "1.0.0",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ],
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://evolkov.tech/mcp/reproleaf"
+    }
+  ]
+}

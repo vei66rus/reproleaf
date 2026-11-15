@@ -1,8 +1,12 @@
 {
   "name": "reproleaf",
-  "version": "0.7.1",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
+  "bin": {
+    "reproleaf": "./src/cli.mjs",
+    "reproleaf-mcp": "./src/mcp.mjs"
+  },
   "description": "Installable agent workflows, MCP and CLI for mobile web checks and evidence-backed editorial review.",
   "engines": {
     "node": ">=22"

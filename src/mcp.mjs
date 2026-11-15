@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import {readFile,readdir} from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -17,6 +18,20 @@ import {getSiteProjectContext,siteProjectInputSchema,getProjectTasks,updateProje
 import {caseCitationUrl,listCheckRules,getCheckRule,listCheckRulesSchema,getCheckRuleSchema} from './check-rules.mjs';
 import {rewriteGuardSchema,checkRewritePreservation} from './rewrite-guard.mjs';
 import {htmlAuditSchema,auditHtmlDocument} from './html-audit.mjs';
+import {schemaAuditSchema,auditJsonLd} from './schema-audit.mjs';
+import {socialAuditSchema,auditSocialMeta} from './social-audit.mjs';
+import {crawlPolicyAuditSchema,auditCrawlPolicy} from './crawl-policy-audit.mjs';
+import {redirectAuditSchema,auditRedirectTraces} from './redirect-audit.mjs';
+import {cocoonAuditSchema,auditCocoonGraph} from './cocoon-audit.mjs';
+import {hreflangAuditSchema,auditHreflangMatrix} from './hreflang-audit.mjs';
+import {llmsTxtAuditSchema,llmsTxtGenerateSchema,auditLlmsTxt,generateLlmsTxt} from './llms-txt.mjs';
+import {aiCrawlerAuditSchema,auditAiCrawlerAccess} from './ai-crawler-audit.mjs';
+import {ragChunkAuditSchema,auditRagChunks} from './rag-chunk-audit.mjs';
+import {groundingAuditSchema,auditClaimGrounding} from './grounding-audit.mjs';
+import {terminologyAuditSchema,auditTerminologyConsistency} from './terminology-audit.mjs';
+import {hydrationDiffSchema,auditRawVsRenderedHtml} from './hydration-diff-audit.mjs';
+import {promptInjectionAuditSchema,auditPromptInjectionAndHiddenText} from './prompt-injection-audit.mjs';
+import {listMethodologies,buildMethodologyPacketSchema,buildMethodologyPacket} from './methodology-packets.mjs';
 import {getServerInstructions} from './server-instructions.mjs';
 export function createServer({publicMode=process.env.REPROLEAF_PUBLIC_MCP==='1',siteProjectOptions={}}={}){
 const server=new McpServer({name:'reproleaf',version},{maxToolInputElements:400000,instructions:getServerInstructions({publicMode})});
@@ -57,6 +72,22 @@ server.registerTool('diagnose_project',{description:'Rank candidate UI checks fr
 server.registerTool('compare_check_runs',{description:'Compare a baseline and post-fix check report (frontend adapter, editorial or blog graph). Reports resolved, remaining, added and unverified findings and highlights any change in viewport, browser, adapterSha256 or checkerSha256.',inputSchema:z.object({before:z.record(z.string(),z.unknown()),after:z.record(z.string(),z.unknown())}),annotations},async({before,after})=>response(compareReports(before,after)));
 server.registerTool('check_rewrite_preservation',{description:'Check before/after text blocks for preserved numbers, URLs, formulas, code spans and negation/condition markers. Deterministic token checks do not prove semantic preservation.',inputSchema:rewriteGuardSchema,annotations},async input=>response(checkRewritePreservation(input)));
 server.registerTool('audit_html_document',{description:'Audit supplied static HTML for multiple canonicals, hreflang validity, encoding/mojibake, H1-H6 outline and robots meta without fetching URLs.',inputSchema:htmlAuditSchema,annotations},async input=>response(auditHtmlDocument(input)));
+server.registerTool('audit_jsonld_schema',{description:'Validate Schema.org JSON-LD structured data blocks inside supplied static HTML without fetching URLs.',inputSchema:schemaAuditSchema,annotations},async input=>response(auditJsonLd(input)));
+server.registerTool('audit_social_meta',{description:'Audit OpenGraph and Twitter Card meta tags and build a social share preview from supplied static HTML without fetching URLs.',inputSchema:socialAuditSchema,annotations},async input=>response(auditSocialMeta(input)));
+server.registerTool('audit_crawl_policy',{description:'Cross-check supplied robots.txt, sitemap.xml and optional page canonical/noindex metadata without fetching URLs.',inputSchema:crawlPolicyAuditSchema,annotations},async input=>response(auditCrawlPolicy(input)));
+server.registerTool('audit_redirect_chains',{description:'Audit supplied HTTP redirect hop traces for loops, multi-hop chains, temporary 302/307 redirects and 4xx/5xx targets without network requests.',inputSchema:redirectAuditSchema,annotations},async input=>response(auditRedirectTraces(input)));
+server.registerTool('audit_semantic_cocoon',{description:'Audit internal link anchors, click depth, orphan pages and semantic cocoon hub/supporting structure without crawling URLs.',inputSchema:cocoonAuditSchema,annotations},async input=>response(auditCocoonGraph(input)));
+server.registerTool('audit_hreflang_matrix',{description:'Validate reciprocal hreflang return links, self-references, x-default, canonical alignment and html[lang] across a page matrix without fetching URLs.',inputSchema:hreflangAuditSchema,annotations},async input=>response(auditHreflangMatrix(input)));
+server.registerTool('audit_llms_txt',{description:'Validate an llms.txt markdown file for H1, blockquote summary, ## sections, absolute links and safe schemes without fetching URLs.',inputSchema:llmsTxtAuditSchema,annotations},async input=>response(auditLlmsTxt(input)));
+server.registerTool('generate_llms_txt',{description:'Generate and validate a spec-compliant llms.txt markdown document from structured sections and links.',inputSchema:llmsTxtGenerateSchema,annotations},async input=>response(generateLlmsTxt(input)));
+server.registerTool('audit_ai_crawler_access',{description:'Check AI search/training crawler rules in robots.txt and non-JS HTML citation readiness without network requests.',inputSchema:aiCrawlerAuditSchema,annotations},async input=>response(auditAiCrawlerAccess(input)));
+server.registerTool('audit_rag_chunks',{description:'Evaluate passage extractability, chunk word lengths and pronoun-dependent openers for RAG/AI answer engines.',inputSchema:ragChunkAuditSchema,annotations},async input=>response(auditRagChunks(input)));
+server.registerTool('audit_claim_grounding',{description:'Check quantitative claims in Markdown for nearby source links, citations or methodology cues without fetching external URLs.',inputSchema:groundingAuditSchema,annotations},async input=>response(auditClaimGrounding(input)));
+server.registerTool('audit_terminology_consistency',{description:'Check entity and terminology consistency across one or more documents against a canonical glossary, aliases and forbidden variants.',inputSchema:terminologyAuditSchema,annotations},async input=>response(auditTerminologyConsistency(input)));
+server.registerTool('audit_hydration_diff',{description:'Compare raw server HTML against client-rendered DOM HTML for CSR-only content, missing H1, canonical/robots mutations and client-only JSON-LD without fetching URLs.',inputSchema:hydrationDiffSchema,annotations},async input=>response(auditRawVsRenderedHtml(input)));
+server.registerTool('audit_prompt_injection',{description:'Detect hidden CSS/HTML text cloaking and prompt-injection override phrases in HTML or Markdown without network requests.',inputSchema:promptInjectionAuditSchema,annotations},async input=>response(auditPromptInjectionAndHiddenText(input)));
+server.registerTool('list_methodologies',{description:'List deterministic SEO/GEO review methodologies, sections and scope limits.',inputSchema:z.object({}),annotations},async()=>response(listMethodologies()));
+server.registerTool('prepare_methodology_packet',{description:'Build a SHA-256 bound methodology review packet with prompt and JSON output contract for BYO-model or local Ollama execution.',inputSchema:buildMethodologyPacketSchema,annotations},async input=>response(buildMethodologyPacket(input)));
 return server;
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){

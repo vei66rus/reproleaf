@@ -1,0 +1,18 @@
+name: Reproleaf SEO Audit
+description: Run deterministic HTML, Schema.org, OpenGraph, and AI crawler audits across built static files.
+inputs:
+  dir:
+    description: Directory containing built HTML files
+    required: true
+    default: dist
+  format:
+    description: Output format (json, csv, or sarif)
+    required: false
+    default: sarif
+  output:
+    description: Output file path
+    required: false
+    default: reproleaf-results.sarif
+runs:
+  using: node20
+  main: run.mjs
