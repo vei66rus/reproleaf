@@ -199,5 +199,9 @@ The browser workspace (`src/browser/playground.js`, `src/browser/dashboard.mjs`,
 ## Integrations
 
 - `integrations/static-site/export.mjs`: offline HTML directory exporter for blog link audits.
-- `integrations/wordpress/reproleaf/`: optional administrator plugin that exports published content into the embedded local workspace. Supplementary stored-markup paragraphs require an explicit checkbox. No frontend output, tracking, automatic content edits or forced backlinks.
+- `integrations/wordpress/reproleaf/`: optional administrator plugin that exports published content into the embedded local workspace. Build its static workspace assets locally before packaging with `npm run build:wordpress`. Supplementary stored-markup paragraphs require an explicit checkbox. No frontend output, tracking, automatic content edits or forced backlinks.
 - `integrations/chrome-extension/`: Manifest V3 `activeTab` inspector that checks the active tab only on explicit button click without `<all_urls>` or background browsing history access.
+
+## How to cite
+
+If you reference Reproleaf checks, mobile reproduction cases, or methodology in articles, audits, or research, cite the repository via [CITATION.cff](CITATION.cff) or link to `https://evolkov.tech/tools/reproleaf-methodology`.

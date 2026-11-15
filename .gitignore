@@ -1,5 +1,6 @@
 node_modules/
 dist/
+integrations/wordpress/reproleaf/workspace/
 artifacts/
 private/
 .env

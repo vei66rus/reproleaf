@@ -15,6 +15,7 @@
     "mcp": "node src/mcp.mjs",
     "test": "node --test tests/*.test.mjs",
     "build:browser": "node src/build-browser.mjs",
+    "build:wordpress": "node src/build-browser.mjs integrations/wordpress/reproleaf/workspace",
     "test:browser": "node tests/browser-regressions.mjs",
     "test:context-browser": "node tests/application-context-browser.mjs",
     "test:comparison-browser": "node tests/frontend-comparison-browser.mjs"
