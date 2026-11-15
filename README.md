@@ -1,5 +1,7 @@
 # Reproleaf
 
+[![M8ven Verified](https://m8ven.ai/badge/mcp/vei66rus-reproleaf-1xe04q?variant=verified&v=acdf89194153532e30d0ad18a72082a4)](https://m8ven.ai/mcp/vei66rus-reproleaf-1xe04q?s=readme)
+
 A local toolkit with installable agent skills, a local CLI, an HTTP JSON API, and read-only MCP tools for mobile web verification and evidence-backed SEO/editorial work. Nine freshly written synthetic UI cases use Vue, React, Three.js, Phaser and HTML. Existing client and personal project repositories remain private.
 
 This is a synthetic regression suite and structural diagnostic toolkit, not a search ranking predictor or autonomous website crawler.
