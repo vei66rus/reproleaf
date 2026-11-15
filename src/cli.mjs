@@ -13,7 +13,7 @@ async function readMetadata(file){
  }finally{await handle.close();}
 }
 try{
- const {values,positionals}=parseArgs({args,allowPositionals:true,options:{case:{type:'string'},all:{type:'boolean'},variant:{type:'string',default:'both'},output:{type:'string'},port:{type:'string',default:'4179'},adapter:{type:'string'},'allow-network':{type:'boolean'},packet:{type:'string'},report:{type:'string'},file:{type:'string'},url:{type:'string'},inventory:{type:'string'},skill:{type:'string'},dest:{type:'string'},stack:{type:'string'},'render-mode':{type:'string'},symptom:{type:'string'},category:{type:'string'},package:{type:'string'},context:{type:'string'},application:{type:'string'},'target-url':{type:'string'},before:{type:'string'},after:{type:'string'},method:{type:'string'},locale:{type:'string',default:'en'},queries:{type:'string'},result:{type:'string'},model:{type:'string'},endpoint:{type:'string',default:'http://127.0.0.1:11434'},'max-tokens':{type:'string',default:'2048'},robots:{type:'string'},sitemap:{type:'string'},'site-url':{type:'string'},pages:{type:'string'},glossary:{type:'string'},dir:{type:'string'},format:{type:'string',default:'json'},preset:{type:'string',default:'saas'}}});
+ const {values,positionals}=parseArgs({args,allowPositionals:true,options:{case:{type:'string'},all:{type:'boolean'},variant:{type:'string',default:'both'},output:{type:'string'},port:{type:'string',default:'4179'},adapter:{type:'string'},'allow-network':{type:'boolean'},packet:{type:'string'},report:{type:'string'},file:{type:'string'},url:{type:'string'},inventory:{type:'string'},skill:{type:'string'},dest:{type:'string'},stack:{type:'string'},'render-mode':{type:'string'},symptom:{type:'string'},category:{type:'string'},package:{type:'string'},context:{type:'string'},application:{type:'string'},'target-url':{type:'string'},before:{type:'string'},after:{type:'string'},method:{type:'string'},locale:{type:'string',default:'en'},queries:{type:'string'},result:{type:'string'},model:{type:'string'},endpoint:{type:'string',default:'http://127.0.0.1:11434'},'max-tokens':{type:'string',default:'2048'},robots:{type:'string'},sitemap:{type:'string'},'site-url':{type:'string'},pages:{type:'string'},glossary:{type:'string'},dir:{type:'string'},format:{type:'string',default:'json'},preset:{type:'string',default:'saas'},'max-pages':{type:'string',default:'50'},'max-depth':{type:'string',default:'3'},'max-bytes':{type:'string',default:'2097152'},'crawl-delay':{type:'string',default:'100'},concurrency:{type:'string',default:'3'},'no-robots':{type:'boolean'},'no-sitemap':{type:'boolean'},'render-js':{type:'boolean'},'max-render-pages':{type:'string',default:'25'},save:{type:'boolean'},id:{type:'string'},status:{type:'string'},origin:{type:'string'},routes:{type:'string'},crawled:{type:'string'},provider:{type:'string',default:'google'},mode:{type:'string',default:'questions'},seed:{type:'string'},strategy:{type:'string',default:'mobile'},domain:{type:'string'},location:{type:'string',default:'2840'},action:{type:'string',default:'volumes'},'api-key':{type:'string'},'dom-file':{type:'string'},'min-overlap':{type:'string',default:'3'},'max-urls':{type:'string',default:'50000'}}});
  if(command==='list'){console.log(JSON.stringify(catalog,null,2));}
  else if(command==='case'){console.log(JSON.stringify(getCase(positionals[0]),null,2));}
  else if(command==='clients'){
@@ -419,6 +419,377 @@ try{
    if(!runReport.ok)process.exitCode=1;
   }else throw Error('Use methodology list | prepare | validate | run-local');
  }
- else if(command==='help'){console.log('Reproleaf\n  node src/cli.mjs list\n  node src/cli.mjs case <id>\n  node src/cli.mjs clients\n  node src/cli.mjs diagnose [--stack <name>] [--render-mode <csr|ssr|ssg|hybrid|islands>] [--symptom <text>] [--category <category>] [--package <package.json> | --context <metadata.json> [--application <id>]]\n  node src/cli.mjs compare --before <report.json> --after <report.json>\n  node src/cli.mjs sanitize --report <report.json>\n  node src/cli.mjs contribute --packet <contribution.json>\n  node src/cli.mjs rewrite-guard --before <file> --after <file> | --packet <json>\n  node src/cli.mjs html-audit --file <page.html> [--url <page URL>]\n  node src/cli.mjs schema-audit --file <page.html> [--url <page URL>]\n  node src/cli.mjs social-audit --file <page.html> [--url <page URL>]\n  node src/cli.mjs crawl-policy [--robots <robots.txt>] [--sitemap <sitemap.xml>] [--site-url <url>]\n  node src/cli.mjs redirect-audit --file <traces.json> | --url <url> --allow-network\n  node src/cli.mjs cocoon-audit --file <inventory.json>\n  node src/cli.mjs hreflang-audit --file <matrix.json>\n  node src/cli.mjs llms-txt audit --file <llms.txt> | generate --file <spec.json>\n  node src/cli.mjs ai-crawler-audit [--robots <robots.txt>] [--file <page.html>] [--url <url>]\n  node src/cli.mjs rag-audit --file <article.md|txt> [--locale <ru|en>]\n  node src/cli.mjs grounding-audit --file <article.md>\n  node src/cli.mjs terminology-audit --file <doc.md> --glossary <glossary.json>\n  node src/cli.mjs hydration-diff --before <raw.html> --after <rendered.html> [--url <url>]\n  node src/cli.mjs batch-audit --dir <directory> [--preset blog|docs|landing|saas] [--format json|csv|sarif] [--output <file>]\n  node src/cli.mjs snapshot --dir <directory> [--output <snapshot.json>]\n  node src/cli.mjs diff --before <baseline.json> --after <current.json>\n  node src/cli.mjs prompt-injection-audit --file <page.html|doc.md>\n  node src/cli.mjs serp-audit --file <page.html> [--queries <primaryQuery>] [--url <url>]\n  node src/cli.mjs dom-perf-audit --file <page.html>\n  node src/cli.mjs cannibalization-audit --file <pages.json>\n  node src/cli.mjs indexation-audit --file <pages.json>\n  node src/cli.mjs clarity-audit --file <article.md> [--locale ru|en]\n  node src/cli.mjs answer-first-audit --file <article.md|page.html>\n  node src/cli.mjs suggest-fixes --file <meta.json>\n  node src/cli.mjs llms-bundle --file <bundle-spec.json>\n  node src/cli.mjs llms-budget-audit --file <budget-input.json>\n  node src/cli.mjs geo-audit --file <geo-input.json>\n  node src/cli.mjs methodology list | prepare | validate | run-local\n  node src/cli.mjs serve [--port 4179]\n  node src/cli.mjs verify --all|--case <id> [--variant both|broken|fixed] [--output <directory>]\n  node src/cli.mjs check --adapter <local JSON file> [--allow-network] [--output <directory>]\n  node src/cli.mjs editorial workflow\n  node src/cli.mjs editorial review --packet <local JSON file>\n  node src/cli.mjs skill install --skill <name> --dest <skills directory>\n  node src/mcp.mjs');}
+ else if(command==='crawl'){
+  const targetUrl=positionals[0]||values.url;
+  if(!targetUrl)throw Error('Use crawl <url> --allow-network [--max-pages 50] [--max-depth 3] [--concurrency 3] [--render-js] [--format json|html|csv|jsonl|sarif] [--output <file>]');
+  if(!values['allow-network'])throw Error('Live crawl requires explicit --allow-network flag.');
+  const {crawlSite}=await import('./live-crawler.mjs');
+  const result=await crawlSite({
+   startUrl:targetUrl,
+   allowNetwork:true,
+   maxPages:Number(values['max-pages']),
+   maxDepth:Number(values['max-depth']),
+   maxBytesPerPage:Number(values['max-bytes']),
+   concurrency:Number(values.concurrency),
+   crawlDelayMs:Number(values['crawl-delay']),
+   respectRobots:!values['no-robots'],
+   followSitemaps:!values['no-sitemap'],
+   renderJs:Boolean(values['render-js']),
+   maxRenderPages:Number(values['max-render-pages'])
+  });
+  if(values.save&&Array.isArray(result.pages)&&result.pages.length>0){
+   const {analyzeInternalLinkEquity}=await import('./link-equity.mjs');
+   const {openWorkspaceDb,saveCrawlSnapshot}=await import('./workspace-store.mjs');
+   const equity=analyzeInternalLinkEquity({startUrl:result.summary.startUrl,pages:result.pages});
+   result.linkEquity=equity;
+   const {db,dbPath}=await openWorkspaceDb(values.dir||process.cwd());
+   try{
+    result.savedSnapshot={...saveCrawlSnapshot(db,result,equity),dbPath};
+   }finally{db.close();}
+  }
+  let payload;
+  if(['html','csv','jsonl','sarif'].includes(values.format)){
+   const {exportCrawlReport}=await import('./crawl-report.mjs');
+   payload=exportCrawlReport(result,{format:values.format}).body;
+  }else{
+   payload=JSON.stringify(result,null,2);
+  }
+  if(values.output){
+   const {writeFile}=await import('node:fs/promises');
+   await writeFile(values.output,payload,'utf8');
+  }
+  console.log(payload);
+  if(!result.ok)process.exitCode=1;
+ }
+ else if(command==='report'){
+  if(!values.file)throw Error('Use report --file <crawl.json> [--format html|csv|jsonl|sarif] [--output <file>]');
+  const {readFile,writeFile}=await import('node:fs/promises');
+  const {exportCrawlReport}=await import('./crawl-report.mjs');
+  const bytes=await readFile(values.file);
+  if(bytes.length>15728640)throw Error('Crawl JSON exceeds 15 MiB');
+  const crawlData=JSON.parse(bytes.toString('utf8'));
+  const fmt=values.format==='json'?'html':values.format;
+  const out=exportCrawlReport(crawlData,{format:fmt});
+  if(values.output)await writeFile(values.output,out.body,'utf8');
+  console.log(out.body);
+ }
+ else if(command==='workspace'){
+  const sub=positionals[0];
+  const {openWorkspaceDb,saveCrawlSnapshot,listSnapshots,getSnapshot,updateFindingStatus}=await import('./workspace-store.mjs');
+  const {db,dbPath}=await openWorkspaceDb(values.dir||process.cwd());
+  try{
+   if(sub==='list'){
+    console.log(JSON.stringify({dbPath,snapshots:listSnapshots(db)},null,2));
+   }else if(sub==='show'){
+    if(!values.id)throw Error('Use workspace show --id <snapshotId> [--dir <projectDir>]');
+    const snap=getSnapshot(db,values.id);
+    if(!snap)throw Error(`Snapshot #${values.id} not found.`);
+    console.log(JSON.stringify(snap,null,2));
+   }else if(sub==='save'){
+    if(!values.file)throw Error('Use workspace save --file <crawl.json> [--dir <projectDir>]');
+    const {readFile}=await import('node:fs/promises');
+    const {analyzeInternalLinkEquity}=await import('./link-equity.mjs');
+    const bytes=await readFile(values.file);
+    if(bytes.length>15728640)throw Error('Crawl JSON exceeds 15 MiB');
+    const crawlData=JSON.parse(bytes.toString('utf8'));
+    const equity=crawlData.pages?.length?analyzeInternalLinkEquity({startUrl:crawlData.summary?.startUrl,pages:crawlData.pages}):null;
+    console.log(JSON.stringify({...saveCrawlSnapshot(db,crawlData,equity),dbPath},null,2));
+   }else if(sub==='task'){
+    if(!values.id||!values.status)throw Error('Use workspace task --id <findingId> --status <open|in_progress|fixed|ignored> [--dir <projectDir>]');
+    console.log(JSON.stringify(updateFindingStatus(db,values.id,values.status),null,2));
+   }else throw Error('Use workspace list | show | save | task');
+  }finally{db.close();}
+ }
+ else if(command==='pagerank'){
+  if(!values.file)throw Error('Use pagerank --file <crawl.json>');
+  const {readFile}=await import('node:fs/promises');
+  const {analyzeInternalLinkEquity}=await import('./link-equity.mjs');
+  const bytes=await readFile(values.file);
+  if(bytes.length>15728640)throw Error('Crawl JSON exceeds 15 MiB');
+  const crawlData=JSON.parse(bytes.toString('utf8'));
+  const result=analyzeInternalLinkEquity({startUrl:crawlData.summary?.startUrl,pages:crawlData.pages||[]});
+  console.log(JSON.stringify(result,null,2));
+  if(!result.ok)process.exitCode=1;
+ }
+ else if(command==='crawl-diff'){
+  if(!values.before||!values.after)throw Error('Use crawl-diff --before <base.json|id> --after <curr.json|id> [--dir <projectDir>]');
+  const {diffCrawlSnapshots}=await import('./crawl-diff.mjs');
+  const loadTarget=async val=>{
+   if(/^\d+$/.test(val)){
+    const {openWorkspaceDb,getSnapshot}=await import('./workspace-store.mjs');
+    const {db}=await openWorkspaceDb(values.dir||process.cwd());
+    try{
+     const snap=getSnapshot(db,val);
+     if(!snap)throw Error(`Snapshot #${val} not found.`);
+     return snap;
+    }finally{db.close();}
+   }
+   const {readFile}=await import('node:fs/promises');
+   const bytes=await readFile(val);
+   if(bytes.length>15728640)throw Error('Snapshot JSON exceeds 15 MiB');
+   return JSON.parse(bytes.toString('utf8'));
+  };
+  const [baseSnap,currSnap]=await Promise.all([loadTarget(values.before),loadTarget(values.after)]);
+  const result=diffCrawlSnapshots(baseSnap,currSnap);
+  console.log(JSON.stringify(result,null,2));
+  if(!result.ok)process.exitCode=1;
+ }
+ else if(command==='watch'){
+  if(!values['allow-network'])throw Error('Watch requires explicit --allow-network flag.');
+  const {watchSiteTemplates}=await import('./crawl-diff.mjs');
+  let config;
+  if(values.file){
+   const {readFile}=await import('node:fs/promises');
+   const bytes=await readFile(values.file);
+   if(bytes.length>524288)throw Error('Watch config exceeds 512 KiB');
+   config={...JSON.parse(bytes.toString('utf8')),allowNetwork:true};
+  }else if(values.origin&&values.routes){
+   config={origin:values.origin,allowNetwork:true,routes:values.routes.split(',').map(s=>s.trim()).filter(Boolean)};
+  }else throw Error('Use watch --origin <url> --routes <r1,r2> --allow-network or watch --file <watch.json> --allow-network');
+  const result=await watchSiteTemplates(config);
+  console.log(JSON.stringify(result,null,2));
+  if(!result.ok)process.exitCode=1;
+ }
+ else if(command==='logs'){
+  if(!values.file)throw Error('Use logs --file <access.log|cf.jsonl> [--crawled <crawl.json>] [--format auto|combined|cloudflare-jsonl]');
+  const {readFile}=await import('node:fs/promises');
+  const {analyzeAccessLogs}=await import('./access-log-analyzer.mjs');
+  const bytes=await readFile(values.file);
+  if(bytes.length>10485760)throw Error('Log file exceeds 10 MiB');
+  let crawledUrls=[];
+  if(values.crawled){
+   const cBytes=await readFile(values.crawled);
+   const crawlObj=JSON.parse(cBytes.toString('utf8'));
+   crawledUrls=(crawlObj.pages||[]).map(p=>p.url).filter(Boolean);
+  }
+  const fmt=['combined','cloudflare-jsonl'].includes(values.format)?values.format:'auto';
+  const result=analyzeAccessLogs({rawLog:bytes.toString('utf8'),format:fmt,crawledUrls});
+  console.log(JSON.stringify(result,null,2));
+  if(!result.ok)process.exitCode=1;
+ }
+ else if(command==='keywords'){
+  const seed=positionals[0]||values.seed;
+  if(!seed)throw Error('Use keywords <seed> --allow-network [--provider google|yandex] [--locale en|ru] [--mode questions|alphabet|both]');
+  if(!values['allow-network'])throw Error('Keywords suggest collection requires explicit --allow-network flag.');
+  const {collectKeywordSuggestTree}=await import('./keyword-suggest.mjs');
+  let db=null;
+  if(values.save||values.dir){
+   const {openWorkspaceDb}=await import('./workspace-store.mjs');
+   ({db}=await openWorkspaceDb(values.dir||process.cwd()));
+  }
+  try{
+   const result=await collectKeywordSuggestTree({
+    seed,
+    provider:values.provider,
+    locale:values.locale==='ru'?'ru':'en',
+    mode:values.mode,
+    allowNetwork:true
+   },{db});
+   console.log(JSON.stringify(result,null,2));
+  }finally{db?.close();}
+ }
+ else if(command==='gsc-audit'){
+  if(!values.file)throw Error('Use gsc-audit --file <queries.csv>');
+  const {readFile}=await import('node:fs/promises');
+  const {auditWebmasterCsv}=await import('./webmaster-csv-audit.mjs');
+  const bytes=await readFile(values.file);
+  if(bytes.length>10485760)throw Error('CSV file exceeds 10 MiB');
+  const result=auditWebmasterCsv({csvText:bytes.toString('utf8')});
+  console.log(JSON.stringify(result,null,2));
+ }
+ else if(command==='psi-audit'){
+  const targetUrl=values.url||positionals[0];
+  if(!values.file&&(!targetUrl||!values['allow-network']))throw Error('Use psi-audit --url <url> --allow-network [--strategy mobile|desktop] [--dom-file <page.html>] | --file <psi.json>');
+  const {readFile}=await import('node:fs/promises');
+  const {auditPageSpeedWithDom}=await import('./psi-connector.mjs');
+  let psiResponse;
+  if(values.file){
+   const pBytes=await readFile(values.file);
+   if(pBytes.length>10485760)throw Error('PSI JSON exceeds 10 MiB');
+   psiResponse=JSON.parse(pBytes.toString('utf8'));
+  }
+  let domPerfReport;
+  if(values['dom-file']){
+   const {auditDomPerf}=await import('./dom-perf-audit.mjs');
+   const hBytes=await readFile(values['dom-file']);
+   if(hBytes.length>1048576)throw Error('HTML exceeds 1 MiB');
+   domPerfReport=auditDomPerf({html:hBytes.toString('utf8')});
+  }
+  const result=await auditPageSpeedWithDom({
+   url:targetUrl||'https://example.com/',
+   strategy:values.strategy==='desktop'?'desktop':'mobile',
+   allowNetwork:Boolean(values['allow-network']),
+   ...(values['api-key']?{apiKey:values['api-key']}:{}),
+   ...(psiResponse?{psiResponse}:{}),
+   ...(domPerfReport?{domPerfReport}:{})
+  });
+  console.log(JSON.stringify(result,null,2));
+  if(!result.ok)process.exitCode=1;
+ }
+ else if(command==='history'){
+  const domain=positionals[0]||values.domain;
+  if(!domain)throw Error('Use history <domain> --allow-network | history <domain> --file <cdx.json>');
+  const {analyzeArchiveHistory}=await import('./history-cdx.mjs');
+  let cdxRows;
+  if(values.file){
+   const {readFile}=await import('node:fs/promises');
+   const bytes=await readFile(values.file);
+   if(bytes.length>10485760)throw Error('CDX JSON exceeds 10 MiB');
+   cdxRows=JSON.parse(bytes.toString('utf8'));
+  }else if(!values['allow-network']){
+   throw Error('Archive history fetch requires --allow-network or offline --file <cdx.json>.');
+  }
+  const result=await analyzeArchiveHistory({
+   domain,
+   allowNetwork:Boolean(values['allow-network']),
+   ...(cdxRows?{cdxRows}:{})
+  });
+  console.log(JSON.stringify(result,null,2));
+ }
+ else if(command==='dataforseo'){
+  if(!values['allow-network'])throw Error('DataForSEO BYOK pipeline requires --allow-network.');
+  if(!values.queries)throw Error('Use dataforseo --action volumes|serp --queries <k1,k2> --allow-network [--location 2840] [--locale en]');
+  const {runDataForSeoByok}=await import('./dataforseo-connector.mjs');
+  const keywords=values.queries.split(',').map(s=>s.trim()).filter(Boolean);
+  let db=null;
+  if(values.save||values.dir){
+   const {openWorkspaceDb}=await import('./workspace-store.mjs');
+   ({db}=await openWorkspaceDb(values.dir||process.cwd()));
+  }
+  try{
+   const result=await runDataForSeoByok({
+    action:values.action==='serp'?'serp':'volumes',
+    keywords,
+    locationCode:Number(values.location),
+    languageCode:values.locale,
+    allowNetwork:true
+   },{db});
+   console.log(JSON.stringify(result,null,2));
+  }finally{db?.close();}
+ }
+ else if(command==='serp-cluster'){
+  if(!values.file)throw Error('Use serp-cluster --file <serp-entries.json> [--mode hard|soft] [--min-overlap 3] [--inventory <pages.json>]');
+  const {readFile}=await import('node:fs/promises');
+  const {clusterSerpKeywords}=await import('./serp-clusterer.mjs');
+  const bytes=await readFile(values.file);
+  if(bytes.length>15728640)throw Error('Input exceeds 15 MiB');
+  const payload=JSON.parse(bytes.toString('utf8'));
+  const entries=Array.isArray(payload)?payload:(payload.entries||[]);
+  let existingPages=Array.isArray(payload)?[]:(payload.existingPages||[]);
+  if(values.inventory){
+   const iBytes=await readFile(values.inventory);
+   if(iBytes.length>15728640)throw Error('Inventory exceeds 15 MiB');
+   const inv=JSON.parse(iBytes.toString('utf8'));
+   existingPages=(inv.pages||[]).map(p=>({url:p.url,title:p.title||'',h1:p.h1||'',primaryQuery:p.primaryQuery}));
+  }
+  const mode=values.mode==='hard'?'hard':'soft';
+  const minOverlap=Number(values['min-overlap'])||3;
+  const result=clusterSerpKeywords({entries,mode,minOverlap,existingPages});
+  console.log(JSON.stringify(result,null,2));
+  if(!result.ok)process.exitCode=1;
+ }
+ else if(command==='serp-gap'){
+  if(!values.file)throw Error('Use serp-gap --file <gap-input.json> [--locale en|ru]');
+  const {readFile}=await import('node:fs/promises');
+  const {analyzeSerpGap}=await import('./serp-gap-analyzer.mjs');
+  const bytes=await readFile(values.file);
+  if(bytes.length>15728640)throw Error('Gap input exceeds 15 MiB');
+  const input=JSON.parse(bytes.toString('utf8'));
+  if(!input.locale)input.locale=values.locale==='ru'?'ru':'en';
+  const result=analyzeSerpGap(input);
+  console.log(JSON.stringify(result,null,2));
+ }
+ else if(command==='cocoon-plan'){
+  if(!values.file)throw Error('Use cocoon-plan --file <cocoon-plan.json>');
+  const {readFile}=await import('node:fs/promises');
+  const {planCocoonAndAnchors}=await import('./cocoon-planner.mjs');
+  const bytes=await readFile(values.file);
+  if(bytes.length>15728640)throw Error('Plan input exceeds 15 MiB');
+  const result=planCocoonAndAnchors(JSON.parse(bytes.toString('utf8')));
+  console.log(JSON.stringify(result,null,2));
+  if(!result.ok)process.exitCode=1;
+ }
+ else if(command==='content-brief'){
+  if(!values.file)throw Error('Use content-brief --file <brief-input.json> [--format md|json] [--output <file>]');
+  const {readFile,writeFile}=await import('node:fs/promises');
+  const {generateContentBrief}=await import('./content-brief-generator.mjs');
+  const bytes=await readFile(values.file);
+  if(bytes.length>10485760)throw Error('Brief input exceeds 10 MiB');
+  const result=generateContentBrief(JSON.parse(bytes.toString('utf8')));
+  const outText=values.format==='md'||values.format==='markdown'?result.markdown:JSON.stringify(result,null,2);
+  if(values.output){await writeFile(values.output,outText,'utf8');console.log(JSON.stringify({written:values.output,ok:result.ok},null,2));}
+  else console.log(outText);
+  if(!result.ok)process.exitCode=1;
+ }
+ else if(command==='eeat-audit'){
+  if(!values.file)throw Error('Use eeat-audit --file <page.html> [--url <page URL>]');
+  const {readFile}=await import('node:fs/promises');
+  const {auditEeatSignals}=await import('./eeat-audit.mjs');
+  const bytes=await readFile(values.file);
+  if(bytes.length>1048576)throw Error('HTML exceeds 1 MiB');
+  const result=auditEeatSignals({html:bytes.toString('utf8'),...(values.url?{url:values.url}:{})});
+  console.log(JSON.stringify(result,null,2));
+  if(!result.ok)process.exitCode=1;
+ }
+ else if(command==='hreflang-live'){
+  if(!values.file)throw Error('Use hreflang-live --file <crawl.json>');
+  const {readFile}=await import('node:fs/promises');
+  const {auditLiveCrawlHreflang}=await import('./sitemap-indexnow.mjs');
+  const bytes=await readFile(values.file);
+  if(bytes.length>15728640)throw Error('Crawl JSON exceeds 15 MiB');
+  const data=JSON.parse(bytes.toString('utf8'));
+  const result=auditLiveCrawlHreflang({pages:data.pages||data});
+  console.log(JSON.stringify(result,null,2));
+  if(!result.ok)process.exitCode=1;
+ }
+ else if(command==='sitemap-split'){
+  if(!values.file&&(!values['site-url']||!values.crawled))throw Error('Use sitemap-split --file <urls.json> | --site-url <url> --crawled <crawl.json> [--max-urls 50000]');
+  const {readFile}=await import('node:fs/promises');
+  const {buildSegmentedSitemaps}=await import('./sitemap-indexnow.mjs');
+  let input;
+  if(values.file){
+   const bytes=await readFile(values.file);
+   if(bytes.length>15728640)throw Error('Sitemap input exceeds 15 MiB');
+   input=JSON.parse(bytes.toString('utf8'));
+  }else{
+   const cBytes=await readFile(values.crawled);
+   const crawlObj=JSON.parse(cBytes.toString('utf8'));
+   const urls=(crawlObj.pages||[]).filter(p=>(p.statusCode??200)===200).map(p=>({loc:p.url}));
+   input={siteUrl:values['site-url'],urls,maxUrlsPerFile:Number(values['max-urls'])||50000};
+  }
+  const result=buildSegmentedSitemaps(input);
+  console.log(JSON.stringify(result,null,2));
+ }
+ else if(command==='indexnow'){
+  if(!values.file||!values['allow-network'])throw Error('Use indexnow --file <indexnow.json> --allow-network');
+  const {readFile}=await import('node:fs/promises');
+  const {pushIndexNow}=await import('./sitemap-indexnow.mjs');
+  const bytes=await readFile(values.file);
+  if(bytes.length>2097152)throw Error('IndexNow JSON exceeds 2 MiB');
+  const input=JSON.parse(bytes.toString('utf8'));
+  const result=await pushIndexNow({...input,allowNetwork:true});
+  console.log(JSON.stringify(result,null,2));
+  if(!result.ok)process.exitCode=1;
+ }
+ else if(command==='benchmark'){
+  if(!values['allow-network'])throw Error('Benchmark runner requires explicit --allow-network flag.');
+  const {readFile,writeFile}=await import('node:fs/promises');
+  const {runEthicalBenchmark}=await import('./benchmark-runner.mjs');
+  let origins=[];
+  if(values.file){
+   const raw=await readFile(values.file,'utf8');
+   origins=raw.trim().startsWith('[')?JSON.parse(raw):raw.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+  }else if(values.url){
+   origins=values.url.split(',').map(s=>s.trim()).filter(Boolean);
+  }else if(positionals.length>0){
+   origins=positionals;
+  }else{
+   throw Error('Use benchmark --file <origins.txt|json> --allow-network | benchmark <url> --allow-network [--output <report.json>]');
+  }
+  const result=await runEthicalBenchmark({origins,allowNetwork:true,concurrency:Number(values.concurrency)||4});
+  if(values.output){await writeFile(values.output,JSON.stringify(result,null,2),'utf8');console.log(JSON.stringify({written:values.output,sha256:result.sha256,summary:result.summary},null,2));}
+  else console.log(JSON.stringify(result,null,2));
+ }
+ else if(command==='help'){console.log('Reproleaf\n  node src/cli.mjs list\n  node src/cli.mjs case <id>\n  node src/cli.mjs clients\n  node src/cli.mjs diagnose [--stack <name>] [--render-mode <csr|ssr|ssg|hybrid|islands>] [--symptom <text>] [--category <category>] [--package <package.json> | --context <metadata.json> [--application <id>]]\n  node src/cli.mjs compare --before <report.json> --after <report.json>\n  node src/cli.mjs sanitize --report <report.json>\n  node src/cli.mjs contribute --packet <contribution.json>\n  node src/cli.mjs rewrite-guard --before <file> --after <file> | --packet <json>\n  node src/cli.mjs html-audit --file <page.html> [--url <page URL>]\n  node src/cli.mjs schema-audit --file <page.html> [--url <page URL>]\n  node src/cli.mjs social-audit --file <page.html> [--url <page URL>]\n  node src/cli.mjs crawl-policy [--robots <robots.txt>] [--sitemap <sitemap.xml>] [--site-url <url>]\n  node src/cli.mjs redirect-audit --file <traces.json> | --url <url> --allow-network\n  node src/cli.mjs cocoon-audit --file <inventory.json>\n  node src/cli.mjs hreflang-audit --file <matrix.json>\n  node src/cli.mjs llms-txt audit --file <llms.txt> | generate --file <spec.json>\n  node src/cli.mjs ai-crawler-audit [--robots <robots.txt>] [--file <page.html>] [--url <url>]\n  node src/cli.mjs rag-audit --file <article.md|txt> [--locale <ru|en>]\n  node src/cli.mjs grounding-audit --file <article.md>\n  node src/cli.mjs terminology-audit --file <doc.md> --glossary <glossary.json>\n  node src/cli.mjs hydration-diff --before <raw.html> --after <rendered.html> [--url <url>]\n  node src/cli.mjs batch-audit --dir <directory> [--preset blog|docs|landing|saas] [--format json|csv|sarif] [--output <file>]\n  node src/cli.mjs snapshot --dir <directory> [--output <snapshot.json>]\n  node src/cli.mjs diff --before <baseline.json> --after <current.json>\n  node src/cli.mjs prompt-injection-audit --file <page.html|doc.md>\n  node src/cli.mjs serp-audit --file <page.html> [--queries <primaryQuery>] [--url <url>]\n  node src/cli.mjs dom-perf-audit --file <page.html>\n  node src/cli.mjs cannibalization-audit --file <pages.json>\n  node src/cli.mjs indexation-audit --file <pages.json>\n  node src/cli.mjs clarity-audit --file <article.md> [--locale ru|en]\n  node src/cli.mjs answer-first-audit --file <article.md|page.html>\n  node src/cli.mjs suggest-fixes --file <meta.json>\n  node src/cli.mjs llms-bundle --file <bundle-spec.json>\n  node src/cli.mjs llms-budget-audit --file <budget-input.json>\n  node src/cli.mjs geo-audit --file <geo-input.json>\n  node src/cli.mjs crawl <url> --allow-network [--max-pages 50] [--max-depth 3] [--concurrency 3] [--render-js] [--save] [--format json|html|csv|jsonl|sarif] [--output <file>]\n  node src/cli.mjs report --file <crawl.json> [--format html|csv|jsonl|sarif] [--output <file>]\n  node src/cli.mjs workspace list | show --id <id> | save --file <crawl.json> | task --id <id> --status <status>\n  node src/cli.mjs pagerank --file <crawl.json>\n  node src/cli.mjs crawl-diff --before <base.json|id> --after <curr.json|id>\n  node src/cli.mjs watch --origin <url> --routes <r1,r2> --allow-network\n  node src/cli.mjs logs --file <access.log|cf.jsonl> [--crawled <crawl.json>]\n  node src/cli.mjs keywords <seed> --allow-network [--provider google|yandex] [--locale en|ru]\n  node src/cli.mjs gsc-audit --file <queries.csv>\n  node src/cli.mjs psi-audit --url <url> --allow-network | --file <psi.json>\n  node src/cli.mjs history <domain> --allow-network | --file <cdx.json>\n  node src/cli.mjs dataforseo --action volumes|serp --queries <k1,k2> --allow-network\n  node src/cli.mjs serp-cluster --file <serp-entries.json> [--mode hard|soft] [--min-overlap 3] [--inventory <pages.json>]\n  node src/cli.mjs serp-gap --file <gap-input.json> [--locale en|ru]\n  node src/cli.mjs cocoon-plan --file <cocoon-plan.json>\n  node src/cli.mjs content-brief --file <brief-input.json> [--format md|json] [--output <file>]\n  node src/cli.mjs eeat-audit --file <page.html> [--url <page URL>]\n  node src/cli.mjs hreflang-live --file <crawl.json>\n  node src/cli.mjs sitemap-split --file <urls.json> | --site-url <url> --crawled <crawl.json>\n  node src/cli.mjs indexnow --file <indexnow.json> --allow-network\n  node src/cli.mjs benchmark --file <origins.txt|json> --allow-network [--output <report.json>]\n  node src/cli.mjs methodology list | prepare | validate | run-local\n  node src/cli.mjs serve [--port 4179]\n  node src/cli.mjs verify --all|--case <id> [--variant both|broken|fixed] [--output <directory>]\n  node src/cli.mjs check --adapter <local JSON file> [--allow-network] [--output <directory>]\n  node src/cli.mjs editorial workflow\n  node src/cli.mjs editorial review --packet <local JSON file>\n  node src/cli.mjs skill install --skill <name> --dest <skills directory>\n  node src/mcp.mjs');}
  else throw Error('Unknown command');
 }catch(error){console.error(error.message);process.exitCode=1;}

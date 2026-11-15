@@ -1,16 +1,26 @@
 import {readFile,mkdir,writeFile,access} from 'node:fs/promises';
 import path from 'node:path';
-import {chromium} from 'playwright';
 import {adapterSchema} from './adapter.mjs';
 import {inspectPage} from './inspect-page.mjs';
 import {root} from './catalog.mjs';
 import {sha256} from './evidence.mjs';
+async function loadPlaywright(){
+ try{
+  return await import('playwright');
+ }catch(error){
+  if(error?.code==='ERR_MODULE_NOT_FOUND'||String(error?.message||'').includes('playwright')){
+   throw Error('Playwright is optional and not installed. Run: npm install playwright && npx playwright install chromium');
+  }
+  throw error;
+ }
+}
 export async function checkTarget({adapter:adapterPath,allowNetwork=false,output}={}){
  const bytes=await readFile(adapterPath);if(bytes.length>65536)throw Error('Adapter exceeds 64 KiB');
  const adapter=adapterSchema.parse(JSON.parse(bytes)),url=new URL(adapter.url);
  const loopback=['127.0.0.1','localhost','[::1]'].includes(url.hostname);
  if(!['http:','https:'].includes(url.protocol)||url.username||url.password)throw Error('Use an HTTP(S) URL without embedded credentials');
  if(!loopback&&!allowNetwork)throw Error('Remote target needs explicit --allow-network. Private projects remain local.');
+ const {chromium}=await loadPlaywright();
  const directory=path.resolve(output||path.join(root,'artifacts/targets',new Date().toISOString().replace(/[:.]/g,'-')));await mkdir(directory,{recursive:true});
  let executablePath=process.env.MWC_BROWSER_PATH||chromium.executablePath();try{await access(executablePath);}catch{if(process.platform==='win32')executablePath='C:/Program Files/Google/Chrome/Application/chrome.exe';}
  const executionProfile={schemaVersion:2,allowNetwork,methods:['GET','HEAD'],analyticsPolicy:'known-analytics-blocked-v1',isMobile:true,hasTouch:true,deviceScaleFactor:1,serviceWorkers:'block',webSockets:'blocked'};

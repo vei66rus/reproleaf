@@ -5,6 +5,7 @@ import {Client,StreamableHTTPClientTransport} from '@modelcontextprotocol/client
 import {startApi} from '../src/api.mjs';
 import {auditBlog} from '../src/blog-graph.mjs';
 import {publicGatewayLimits,proxyClientIdentity,assertPublicRequestBudget} from '../src/public-gateway-policy.mjs';
+import {version} from '../src/version.mjs';
 
 const headers={'Content-Type':'application/json',Accept:'application/json, text/event-stream'};
 const disabled={envPath:'missing-gateway-test.env',enabled:false,apiKey:'',model:'',dailyBudgetUsd:0,inputPricePerMillion:0,outputPricePerMillion:0};
@@ -17,7 +18,7 @@ const inventory=n=>({schemaVersion:1,siteUrl:'https://example.org',coverage:'Syn
 test('official SDK reads eleven tools from an explicitly public-only nonloopback server',async t=>{
  const api=await gateway(t,{publicGatewayOnly:true,listenHost:'0.0.0.0'}),trace=[];assert.equal(api.server.address().address,'0.0.0.0');const client=new Client({name:'gateway-conformance-test',version:'1.0'});
  const transport=new StreamableHTTPClientTransport(new URL(api.url+'/v1/mcp'),{fetch:async(url,init)=>{const response=await fetch(url,init);trace.push({method:JSON.parse(init?.body||'{}').method,status:response.status,body:await response.clone().text()});return response;}});
- try{await client.connect(transport);assert.equal(client.getServerVersion().version,'1.0.0');const tools=(await client.listTools()).tools;assert.equal(tools.length,39);assert.ok(tools.every(tool=>tool.annotations.readOnlyHint));assert.equal((await client.callTool({name:'get_check_rule',arguments:{id:'editorial:h1-count'}})).isError,false);for(const name of ['update_project_task','get_case_source'])await assert.rejects(client.callTool({name,arguments:{}}),/Unknown or restricted tool/);const initialized=trace.find(item=>item.method==='notifications/initialized');assert.deepEqual(initialized,{method:'notifications/initialized',status:202,body:''});}finally{await client.close();}
+ try{await client.connect(transport);assert.equal(client.getServerVersion().version,version);const tools=(await client.listTools()).tools;assert.equal(tools.length,46);assert.ok(tools.every(tool=>tool.annotations.readOnlyHint));assert.equal((await client.callTool({name:'get_check_rule',arguments:{id:'editorial:h1-count'}})).isError,false);for(const name of ['update_project_task','get_case_source'])await assert.rejects(client.callTool({name,arguments:{}}),/Unknown or restricted tool/);const initialized=trace.find(item=>item.method==='notifications/initialized');assert.deepEqual(initialized,{method:'notifications/initialized',status:202,body:''});}finally{await client.close();}
 });
 test('notification-only messages and batches return202 without a body',async t=>{
  const api=await gateway(t);for(const value of [{jsonrpc:'2.0',method:'notifications/initialized'},[{jsonrpc:'2.0',method:'notifications/initialized'},{jsonrpc:'2.0',method:'ping'}],{jsonrpc:'2.0',id:1,result:{}}]){const response=await post(api,value);assert.equal(response.status,202);assert.equal(await response.text(),'');}

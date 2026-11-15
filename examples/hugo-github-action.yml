@@ -1,0 +1,30 @@
+name: Reproleaf Hugo GEO & SEO Audit
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: peaceiris/actions-hugo@v3
+        with:
+          hugo-version: '0.136.0'
+          extended: true
+      - run: hugo --minify
+      - uses: vei66rus/reproleaf/integrations/github-action@main
+        with:
+          dir: public
+          preset: blog
+          format: json
+          output: reproleaf-report.json
+          comment-pr: 'true'
+          github-token: ${{ secrets.GITHUB_TOKEN }}

@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import {runBatchAudit} from '../src/batch-audit.mjs';
 import {toSarifReport} from '../src/sarif-export.mjs';
+import {version} from '../src/version.mjs';
 
 test('open corpus batch audit and SARIF 2.1.0 export run deterministically',async t=>{
  const dir=await mkdtemp(path.join(os.tmpdir(),'reproleaf-corpus-'));
@@ -17,6 +18,6 @@ test('open corpus batch audit and SARIF 2.1.0 export run deterministically',asyn
  assert.equal(report.summary.pagesAudited,2);
  const sarif=toSarifReport(report);
  assert.equal(sarif.version,'2.1.0');
- assert.equal(sarif.runs[0].tool.driver.version,'1.0.0');
+ assert.equal(sarif.runs[0].tool.driver.version,version);
  assert.ok(sarif.runs[0].results.length>=1);
 });

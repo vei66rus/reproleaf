@@ -1,22 +1,27 @@
 # Reproleaf
 
+[![GEO & SEO Checked by Reproleaf](badges/geo-seo-checked.svg)](https://evolkov.tech/en/tools/geo-readiness-checker/)
+[![llms.txt Verified by Reproleaf](badges/llms-txt-verified.svg)](https://evolkov.tech/en/tools/llms-txt-studio/)
 [![M8ven Verified](https://m8ven.ai/badge/mcp/vei66rus-reproleaf-1xe04q?variant=verified&v=acdf89194153532e30d0ad18a72082a4)](https://m8ven.ai/mcp/vei66rus-reproleaf-1xe04q?s=readme)
 
-A local toolkit with installable agent skills, a local CLI, an HTTP JSON API, and read-only MCP tools for mobile web verification and evidence-backed SEO/editorial work. Nine freshly written synthetic UI cases use Vue, React, Three.js, Phaser and HTML. Existing client and personal project repositories remain private.
+Local-first deterministic technical SEO, GEO (`llms.txt`, AI crawler access), Schema.org JSON-LD, internal PageRank, log analysis, and mobile web verification toolkit built for Node.js (>=22), CI pipelines, coding agents (MCP), Chrome, and VS Code.
 
-This is a synthetic regression suite and structural diagnostic toolkit, not a search ranking predictor or autonomous website crawler.
+Online browser tools and GEO leaderboard (runs offline inside your browser tab, zero login required): [evolkov.tech/en/tools/geo-benchmark-leaderboard](https://evolkov.tech/en/tools/geo-benchmark-leaderboard).
 
-## Version 0.7.1
+## Version 2.0.0
 
-[Download the source kit, WordPress helper or standalone browser workspace](https://github.com/vei66rus/reproleaf/releases/tag/v0.7.1). Choose the source kit for local CLI/MCP, the helper for WordPress admin, or the browser workspace for a self-hosted static interface. [Report a reproducible issue](https://github.com/vei66rus/reproleaf/issues) with synthetic data; [contribution requirements](CONTRIBUTING.md) describe the acceptance boundary.
+### 30-Second Quickstart
 
-Use the browser workspace, CLI or MCP to inspect article structure, observed internal links and mobile interface behavior. The source includes guarded skill installation, execution-policy and final-state evidence, exact donor-span validation, and an optional WordPress published-content exporter. WordPress is not required. The exporter adds no frontend tracking, automatic edits or mandatory backlinks.
+- **CLI static build audit (SARIF / JSON / CSV):** `npx --yes reproleaf batch-audit --dir dist --preset saas --format sarif --output reproleaf.sarif`
+- **Local stdio MCP (50 tools):** `npx -y reproleaf-mcp` (Node 22+, Playwright optional peer dependency)
+- **GitHub Action v2 (PR delta table + SARIF):** copy a workflow from [examples/](examples/README.md) using `vei66rus/reproleaf/integrations/github-action@main`
+- **Chrome MV3 extension (`activeTab` only):** load [integrations/chrome-extension](integrations/chrome-extension/STORE-CHECKLIST.md) for instant HTML, JSON-LD, SERP extractor & DOM checks
+- **VS Code linter with Quick Fixes:** open [integrations/vscode](integrations/vscode/package.json) for real-time HTML, Markdown & `llms.txt` diagnostics
+- **Verified 24-origin dev-docs benchmark (`benchmarks/pilot-dataset.json`):** reproduce ethically (`<=1 req/2s` per domain) via `node src/cli.mjs benchmark --file benchmarks/origins-devdocs.txt --allow-network`
 
-Unreleased passage retrieval experiments failed independent relevance gates and are excluded from the distribution and public CLI/API/MCP. The existing inventory algorithm remains available. Exact text spans prove text locations, not that a link is useful. See [paragraph evidence and research results](docs/PARAGRAPH-REVIEW.md). Paid semantic review remains disabled pending provider and budget approval. The reviewed source is published at [vei66rus/reproleaf](https://github.com/vei66rus/reproleaf).
+## Architecture & Scope
 
-The public Streamable HTTP MCP endpoint is `https://evolkov.tech/mcp/reproleaf`. It exposes eleven read-only tools with request and work limits. It has no access to saved private projects, local source files, task mutations or paid models. Supplied article/inventory data is sent to this service when a client invokes a review tool; use local stdio for data that must stay on your computer. See [public gateway limits and hosting boundary](docs/PUBLIC-GATEWAY.md). A remote URL does not install a ChatGPT web integration.
-
-MCP initialization supplies a short shared workflow and an accurate capability note for the active mode. The [official OpenAI MCP guide](https://learn.chatgpt.com/docs/extend/mcp) distinguishes direct local-client connections from ChatGPT web plugins. A remote URL alone does not install a web integration.
+The public Streamable HTTP MCP endpoint at `https://evolkov.tech/mcp/reproleaf` exposes **46** read-only supplied-data analysis tools; restricted `REPROLEAF_PUBLIC_MCP=1` stdio exposes **44** read-only tools, and full local stdio registers **50** tools. Private project data and local files never touch the public gateway. See [public gateway limits](docs/PUBLIC-GATEWAY.md) and [MCP directory manifests](docs/MCP-DIRECTORIES.md).
 
 ## Run locally
 
@@ -68,11 +73,11 @@ Runs write `report.json` and screenshots under `artifacts/runs/<timestamp>/`. Th
 
 Chromium viewport emulation and CDP touch injection are **not physical iOS or Android results**. Scroll and focus assertions do not establish full accessibility or performance compliance.
 
-## MCP (15 local tools; public read-only modes)
+## MCP (50 local tools; 44 public stdio / 46 HTTP read-only)
 
-The local stdio server (`src/mcp.mjs`) registers 15 tools. Fourteen are read-only; `update_project_task` writes an explicitly requested decision and optional note to the configured private project. It requires the operator's project capability and does not modify website content or resolve an observed finding.
+The local stdio server (`src/mcp.mjs`, or `npx -y reproleaf-mcp`) registers 50 tools covering technical SEO, AI search (GEO), `llms.txt` token budgeting, Answer-First structure, SERP pixel preview, SERP clustering/gap/cocoon planning, E-E-A-T, JSON-LD, OpenGraph, hreflang, and synthetic mobile web checks. Forty-nine are read-only; `update_project_task` writes an explicitly requested decision and optional note to the configured private project.
 
-Public stdio mode (`REPROLEAF_PUBLIC_MCP=1`) exposes nine read-only tools. It excludes the three private project tools, the local source/evidence tools and `get_workflow`. Stateless JSON-RPC HTTP (`POST /v1/mcp`) exposes the same nine operations plus `get_schemas` and `get_client_setups`, for 11 read-only tools. The complete local stdio tool list is:
+Public stdio mode (`REPROLEAF_PUBLIC_MCP=1`) exposes 44 read-only tools. Stateless JSON-RPC HTTP (`POST /v1/mcp`) exposes 46 read-only tools. The core local and editorial tools include:
 
 - `list_cases`: search the synthetic case metadata (`query`, `category`, `limit`, `offset`).
 - `get_case`: retrieve the expected behavior, limitations and local verification command.
@@ -201,6 +206,9 @@ The browser workspace (`src/browser/playground.js`, `src/browser/dashboard.mjs`,
 - `integrations/static-site/export.mjs`: offline HTML directory exporter for blog link audits.
 - `integrations/wordpress/reproleaf/`: optional administrator plugin that exports published content into the embedded local workspace. Build its static workspace assets locally before packaging with `npm run build:wordpress`. Supplementary stored-markup paragraphs require an explicit checkbox. No frontend output, tracking, automatic content edits or forced backlinks.
 - `integrations/chrome-extension/`: Manifest V3 `activeTab` inspector that checks the active tab only on explicit button click without `<all_urls>` or background browsing history access.
+- `integrations/vscode/`: real-time HTML, Markdown and `llms.txt` diagnostics with deterministic JSON-LD Quick Fixes.
+- `integrations/github-action/` & `examples/`: CI action v2 with SARIF 2.1.0 output, baseline error delta comparisons, and fork-safe pull request comments for Next.js, Astro, Docusaurus, VitePress, Hugo, and WordPress static builds.
+- `badges/`: lightweight SVG verification badges generated by `src/badge-generator.mjs`.
 
 ## How to cite
 

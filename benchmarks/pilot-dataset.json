@@ -1,0 +1,654 @@
+{
+  "ok": true,
+  "sha256": "f872c46c32ed9547bb8375526576ba2d05558f1332c73b453b08a09f5c0b6e95",
+  "generatedAt": "2026-11-15T15:05:20.803Z",
+  "summary": {
+    "methodology": "Ethical public landing probe (/robots.txt, /, /llms.txt), <=1 req/2s per domain, SSRF guarded.",
+    "userAgent": "ReproleafBenchmarkBot/2.0 (+https://evolkov.tech/tools/geo-benchmark-leaderboard)",
+    "totalOrigins": 24,
+    "reachableCount": 24,
+    "skippedByRobotsCount": 0,
+    "validLlmsTxtCount": 17,
+    "jsonLdAdoptedCount": 8,
+    "oaiSearchAllowedCount": 24,
+    "perplexityAllowedCount": 24,
+    "gptBotBlockedCount": 0
+  },
+  "results": [
+    {
+      "origin": "https://llmstxt.org",
+      "retrievedAt": "2026-11-15T15:05:01.193Z",
+      "status": "ok",
+      "permissionLog": {
+        "robotsUrl": "https://llmstxt.org/robots.txt",
+        "robotsStatus": 200,
+        "allowedHome": true,
+        "allowedLlmsTxt": true,
+        "userAgent": "ReproleafBenchmarkBot/2.0 (+https://evolkov.tech/tools/geo-benchmark-leaderboard)"
+      },
+      "homeStatus": 200,
+      "ttfbMs": 235,
+      "wordCount": 1896,
+      "jsonLdTypes": [],
+      "llmsTxtStatus": 200,
+      "llmsTxtValid": true,
+      "aiBots": {
+        "OAI-SearchBot": "allowed",
+        "PerplexityBot": "allowed",
+        "GPTBot": "allowed",
+        "ClaudeBot": "allowed"
+      },
+      "score": 80
+    },
+    {
+      "origin": "https://modelcontextprotocol.io",
+      "retrievedAt": "2026-11-15T15:05:02.519Z",
+      "status": "ok",
+      "permissionLog": {
+        "robotsUrl": "https://modelcontextprotocol.io/robots.txt",
+        "robotsStatus": 200,
+        "allowedHome": true,
+        "allowedLlmsTxt": true,
+        "userAgent": "ReproleafBenchmarkBot/2.0 (+https://evolkov.tech/tools/geo-benchmark-leaderboard)"
+      },
+      "homeStatus": 200,
+      "ttfbMs": 1353,
+      "wordCount": 522,
+      "jsonLdTypes": [
+        "Organization",
+        "WebSite",
+        "WebPage",
+        "BreadcrumbList",
+        "Article",
+        "TechArticle"
+      ],
+      "llmsTxtStatus": 200,
+      "llmsTxtValid": false,
+      "aiBots": {
+        "OAI-SearchBot": "allowed",
+        "PerplexityBot": "allowed",
+        "GPTBot": "allowed",
+        "ClaudeBot": "allowed"
+      },
+      "score": 80
+    },
+    {
+      "origin": "https://nodejs.org",
+      "retrievedAt": "2026-11-15T15:05:02.898Z",
+      "status": "ok",
+      "permissionLog": {
+        "robotsUrl": "https://nodejs.org/robots.txt",
+        "robotsStatus": 200,
+        "allowedHome": true,
+        "allowedLlmsTxt": true,
+        "userAgent": "ReproleafBenchmarkBot/2.0 (+https://evolkov.tech/tools/geo-benchmark-leaderboard)"
+      },
+      "homeStatus": 200,
+      "ttfbMs": 2096,
+      "wordCount": 636,
+      "jsonLdTypes": [],
+      "llmsTxtStatus": 200,
+      "llmsTxtValid": true,
+      "aiBots": {
+        "OAI-SearchBot": "allowed",
+        "PerplexityBot": "allowed",
+        "GPTBot": "allowed",
+        "ClaudeBot": "allowed"
+      },
+      "score": 80
+    },
+    {
+      "origin": "https://react.dev",
+      "retrievedAt": "2026-11-15T15:05:01.510Z",
+      "status": "ok",
+      "permissionLog": {
+        "robotsUrl": "https://react.dev/robots.txt",
+        "robotsStatus": 200,
+        "allowedHome": true,
+        "allowedLlmsTxt": true,
+        "userAgent": "ReproleafBenchmarkBot/2.0 (+https://evolkov.tech/tools/geo-benchmark-leaderboard)"
+      },
+      "homeStatus": 200,
+      "ttfbMs": 395,
+      "wordCount": 1437,
+      "jsonLdTypes": [],
+      "llmsTxtStatus": 200,
+      "llmsTxtValid": true,
+      "aiBots": {
+        "OAI-SearchBot": "allowed",
+        "PerplexityBot": "allowed",
+        "GPTBot": "allowed",
+        "ClaudeBot": "allowed"
+      },
+      "score": 80
+    },
+    {
+      "origin": "https://vuejs.org",
+      "retrievedAt": "2026-11-15T15:05:01.174Z",
+      "status": "ok",
+      "permissionLog": {
+        "robotsUrl": "https://vuejs.org/robots.txt",
+        "robotsStatus": 200,
+        "allowedHome": true,
+        "allowedLlmsTxt": true,
+        "userAgent": "ReproleafBenchmarkBot/2.0 (+https://evolkov.tech/tools/geo-benchmark-leaderboard)"
+      },
+      "homeStatus": 200,
+      "ttfbMs": 227,
+      "wordCount": 301,
+      "jsonLdTypes": [],
+      "llmsTxtStatus": 200,
+      "llmsTxtValid": true,
+      "aiBots": {
+        "OAI-SearchBot": "allowed",
+        "PerplexityBot": "allowed",
+        "GPTBot": "allowed",
+        "ClaudeBot": "allowed"
+      },
+      "score": 80
+    },
+    {
+      "origin": "https://nextjs.org",
+      "retrievedAt": "2026-11-15T15:05:01.387Z",
+      "status": "ok",
+      "permissionLog": {
+        "robotsUrl": "https://nextjs.org/robots.txt",
+        "robotsStatus": 404,
+        "allowedHome": true,
+        "allowedLlmsTxt": true,
+        "userAgent": "ReproleafBenchmarkBot/2.0 (+https://evolkov.tech/tools/geo-benchmark-leaderboard)"
+      },
+      "homeStatus": 200,
+      "ttfbMs": 372,
+      "wordCount": 653,
+      "jsonLdTypes": [
+        "SoftwareApplication",
+        "WebSite",
+        "Organization"
+      ],
+      "llmsTxtStatus": 200,
+      "llmsTxtValid": true,
+      "aiBots": {
+        "OAI-SearchBot": "allowed",
+        "PerplexityBot": "allowed",
+        "GPTBot": "allowed",
+        "ClaudeBot": "allowed"
+      },
+      "score": 100
+    },
+    {
+      "origin": "https://astro.build",
+      "retrievedAt": "2026-11-15T15:05:07.531Z",
+      "status": "ok",
+      "permissionLog": {
+        "robotsUrl": "https://astro.build/robots.txt",
+        "robotsStatus": 200,
+        "allowedHome": true,
+        "allowedLlmsTxt": true,
+        "userAgent": "ReproleafBenchmarkBot/2.0 (+https://evolkov.tech/tools/geo-benchmark-leaderboard)"
+      },
+      "homeStatus": 200,
+      "ttfbMs": 529,
+      "wordCount": 986,
+      "jsonLdTypes": [],
+      "llmsTxtStatus": 404,
+      "llmsTxtValid": false,
+      "aiBots": {
+        "OAI-SearchBot": "allowed",
+        "PerplexityBot": "allowed",
+        "GPTBot": "allowed",
+        "ClaudeBot": "allowed"
+      },
+      "score": 60
+    },
+    {
+      "origin": "https://vite.dev",
+      "retrievedAt": "2026-11-15T15:05:06.520Z",
+      "status": "ok",
+      "permissionLog": {
+        "robotsUrl": "https://vite.dev/robots.txt",
+        "robotsStatus": 404,
+        "allowedHome": true,
+        "allowedLlmsTxt": true,
+        "userAgent": "ReproleafBenchmarkBot/2.0 (+https://evolkov.tech/tools/geo-benchmark-leaderboard)"
+      },
+      "homeStatus": 200,
+      "ttfbMs": 217,
+      "wordCount": 626,
+      "jsonLdTypes": [],
+      "llmsTxtStatus": 200,
+      "llmsTxtValid": true,
+      "aiBots": {
+        "OAI-SearchBot": "allowed",
+        "PerplexityBot": "allowed",
+        "GPTBot": "allowed",
+        "ClaudeBot": "allowed"
+      },
+      "score": 80
+    },
+    {
+      "origin": "https://svelte.dev",
+      "retrievedAt": "2026-11-15T15:05:06.814Z",
+      "status": "ok",
+      "permissionLog": {
+        "robotsUrl": "https://svelte.dev/robots.txt",
+        "robotsStatus": 200,
+        "allowedHome": true,
+        "allowedLlmsTxt": true,
+        "userAgent": "ReproleafBenchmarkBot/2.0 (+https://evolkov.tech/tools/geo-benchmark-leaderboard)"
+      },
+      "homeStatus": 200,
+      "ttfbMs": 280,
+      "wordCount": 314,
+      "jsonLdTypes": [],
+      "llmsTxtStatus": 200,
+      "llmsTxtValid": true,
+      "aiBots": {
+        "OAI-SearchBot": "allowed",
+        "PerplexityBot": "allowed",
+        "GPTBot": "allowed",
+        "ClaudeBot": "allowed"
+      },
+      "score": 80
+    },
+    {
+      "origin": "https://tailwindcss.com",
+      "retrievedAt": "2026-11-15T15:05:08.218Z",
+      "status": "ok",
+      "permissionLog": {
+        "robotsUrl": "https://tailwindcss.com/robots.txt",
+        "robotsStatus": 404,
+        "allowedHome": true,
+        "allowedLlmsTxt": true,
+        "userAgent": "ReproleafBenchmarkBot/2.0 (+https://evolkov.tech/tools/geo-benchmark-leaderboard)"
+      },
+      "homeStatus": 200,
+      "ttfbMs": 716,
+      "wordCount": 1144,
+      "jsonLdTypes": [],
+      "llmsTxtStatus": 404,
+      "llmsTxtValid": false,
+      "aiBots": {
+        "OAI-SearchBot": "allowed",
+        "PerplexityBot": "allowed",
+        "GPTBot": "allowed",
+        "ClaudeBot": "allowed"
+      },
+      "score": 60
+    },
+    {
+      "origin": "https://eslint.org",
+      "retrievedAt": "2026-11-15T15:05:08.059Z",
+      "status": "ok",
+      "permissionLog": {
+        "robotsUrl": "https://eslint.org/robots.txt",
+        "robotsStatus": 200,
+        "allowedHome": true,
+        "allowedLlmsTxt": true,
+        "userAgent": "ReproleafBenchmarkBot/2.0 (+https://evolkov.tech/tools/geo-benchmark-leaderboard)"
+      },
+      "homeStatus": 200,
+      "ttfbMs": 264,
+      "wordCount": 973,
+      "jsonLdTypes": [],
+      "llmsTxtStatus": 404,
+      "llmsTxtValid": false,
+      "aiBots": {
+        "OAI-SearchBot": "allowed",
+        "PerplexityBot": "allowed",
+        "GPTBot": "allowed",
+        "ClaudeBot": "allowed"
+      },
+      "score": 60
+    },
+    {
+      "origin": "https://fastify.dev",
+      "retrievedAt": "2026-11-15T15:05:08.351Z",
+      "status": "ok",
+      "permissionLog": {
+        "robotsUrl": "https://fastify.dev/robots.txt",
+        "robotsStatus": 404,
+        "allowedHome": true,
+        "allowedLlmsTxt": true,
+        "userAgent": "ReproleafBenchmarkBot/2.0 (+https://evolkov.tech/tools/geo-benchmark-leaderboard)"
+      },
+      "homeStatus": 200,
+      "ttfbMs": 272,
+      "wordCount": 922,
+      "jsonLdTypes": [
+        "WebSite"
+      ],
+      "llmsTxtStatus": 200,
+      "llmsTxtValid": true,
+      "aiBots": {
+        "OAI-SearchBot": "allowed",
+        "PerplexityBot": "allowed",
+        "GPTBot": "allowed",
+        "ClaudeBot": "allowed"
+      },
+      "score": 100
+    },
+    {
+      "origin": "https://nuxt.com",
+      "retrievedAt": "2026-11-15T15:05:12.159Z",
+      "status": "ok",
+      "permissionLog": {
+        "robotsUrl": "https://nuxt.com/robots.txt",
+        "robotsStatus": 200,
+        "allowedHome": true,
+        "allowedLlmsTxt": true,
+        "userAgent": "ReproleafBenchmarkBot/2.0 (+https://evolkov.tech/tools/geo-benchmark-leaderboard)"
+      },
+      "homeStatus": 200,
+      "ttfbMs": 511,
+      "wordCount": 1071,
+      "jsonLdTypes": [
+        "WebSite",
+        "WebPage",
+        "Organization",
+        "SoftwareApplication",
+        "ImageObject"
+      ],
+      "llmsTxtStatus": 200,
+      "llmsTxtValid": true,
+      "aiBots": {
+        "OAI-SearchBot": "allowed",
+        "PerplexityBot": "allowed",
+        "GPTBot": "allowed",
+        "ClaudeBot": "allowed"
+      },
+      "score": 100
+    },
+    {
+      "origin": "https://zod.dev",
+      "retrievedAt": "2026-11-15T15:05:12.509Z",
+      "status": "ok",
+      "permissionLog": {
+        "robotsUrl": "https://zod.dev/robots.txt",
+        "robotsStatus": 200,
+        "allowedHome": true,
+        "allowedLlmsTxt": true,
+        "userAgent": "ReproleafBenchmarkBot/2.0 (+https://evolkov.tech/tools/geo-benchmark-leaderboard)"
+      },
+      "homeStatus": 200,
+      "ttfbMs": 428,
+      "wordCount": 512,
+      "jsonLdTypes": [],
+      "llmsTxtStatus": 200,
+      "llmsTxtValid": true,
+      "aiBots": {
+        "OAI-SearchBot": "allowed",
+        "PerplexityBot": "allowed",
+        "GPTBot": "allowed",
+        "ClaudeBot": "allowed"
+      },
+      "score": 80
+    },
+    {
+      "origin": "https://bun.sh",
+      "retrievedAt": "2026-11-15T15:05:13.386Z",
+      "status": "ok",
+      "permissionLog": {
+        "robotsUrl": "https://bun.sh/robots.txt",
+        "robotsStatus": 200,
+        "allowedHome": true,
+        "allowedLlmsTxt": true,
+        "userAgent": "ReproleafBenchmarkBot/2.0 (+https://evolkov.tech/tools/geo-benchmark-leaderboard)"
+      },
+      "homeStatus": 200,
+      "ttfbMs": 358,
+      "wordCount": 3057,
+      "jsonLdTypes": [
+        "Organization",
+        "WebSite",
+        "WebPage"
+      ],
+      "llmsTxtStatus": 200,
+      "llmsTxtValid": true,
+      "aiBots": {
+        "OAI-SearchBot": "allowed",
+        "PerplexityBot": "allowed",
+        "GPTBot": "allowed",
+        "ClaudeBot": "allowed"
+      },
+      "score": 100
+    },
+    {
+      "origin": "https://deno.com",
+      "retrievedAt": "2026-11-15T15:05:14.189Z",
+      "status": "ok",
+      "permissionLog": {
+        "robotsUrl": "https://deno.com/robots.txt",
+        "robotsStatus": 200,
+        "allowedHome": true,
+        "allowedLlmsTxt": true,
+        "userAgent": "ReproleafBenchmarkBot/2.0 (+https://evolkov.tech/tools/geo-benchmark-leaderboard)"
+      },
+      "homeStatus": 200,
+      "ttfbMs": 778,
+      "wordCount": 1937,
+      "jsonLdTypes": [],
+      "llmsTxtStatus": 200,
+      "llmsTxtValid": false,
+      "aiBots": {
+        "OAI-SearchBot": "allowed",
+        "PerplexityBot": "allowed",
+        "GPTBot": "allowed",
+        "ClaudeBot": "allowed"
+      },
+      "score": 60
+    },
+    {
+      "origin": "https://www.typescriptlang.org",
+      "retrievedAt": "2026-11-15T15:05:13.805Z",
+      "status": "ok",
+      "permissionLog": {
+        "robotsUrl": "https://www.typescriptlang.org/robots.txt",
+        "robotsStatus": 404,
+        "allowedHome": true,
+        "allowedLlmsTxt": true,
+        "userAgent": "ReproleafBenchmarkBot/2.0 (+https://evolkov.tech/tools/geo-benchmark-leaderboard)"
+      },
+      "homeStatus": 200,
+      "ttfbMs": 448,
+      "wordCount": 931,
+      "jsonLdTypes": [],
+      "llmsTxtStatus": 503,
+      "llmsTxtValid": false,
+      "aiBots": {
+        "OAI-SearchBot": "allowed",
+        "PerplexityBot": "allowed",
+        "GPTBot": "allowed",
+        "ClaudeBot": "allowed"
+      },
+      "score": 60
+    },
+    {
+      "origin": "https://playwright.dev",
+      "retrievedAt": "2026-11-15T15:05:14.412Z",
+      "status": "ok",
+      "permissionLog": {
+        "robotsUrl": "https://playwright.dev/robots.txt",
+        "robotsStatus": 200,
+        "allowedHome": true,
+        "allowedLlmsTxt": true,
+        "userAgent": "ReproleafBenchmarkBot/2.0 (+https://evolkov.tech/tools/geo-benchmark-leaderboard)"
+      },
+      "homeStatus": 200,
+      "ttfbMs": 176,
+      "wordCount": 493,
+      "jsonLdTypes": [],
+      "llmsTxtStatus": 404,
+      "llmsTxtValid": false,
+      "aiBots": {
+        "OAI-SearchBot": "allowed",
+        "PerplexityBot": "allowed",
+        "GPTBot": "allowed",
+        "ClaudeBot": "allowed"
+      },
+      "score": 60
+    },
+    {
+      "origin": "https://vitest.dev",
+      "retrievedAt": "2026-11-15T15:05:17.442Z",
+      "status": "ok",
+      "permissionLog": {
+        "robotsUrl": "https://vitest.dev/robots.txt",
+        "robotsStatus": 200,
+        "allowedHome": true,
+        "allowedLlmsTxt": true,
+        "userAgent": "ReproleafBenchmarkBot/2.0 (+https://evolkov.tech/tools/geo-benchmark-leaderboard)"
+      },
+      "homeStatus": 200,
+      "ttfbMs": 251,
+      "wordCount": 283,
+      "jsonLdTypes": [],
+      "llmsTxtStatus": 200,
+      "llmsTxtValid": true,
+      "aiBots": {
+        "OAI-SearchBot": "allowed",
+        "PerplexityBot": "allowed",
+        "GPTBot": "allowed",
+        "ClaudeBot": "allowed"
+      },
+      "score": 80
+    },
+    {
+      "origin": "https://hono.dev",
+      "retrievedAt": "2026-11-15T15:05:17.813Z",
+      "status": "ok",
+      "permissionLog": {
+        "robotsUrl": "https://hono.dev/robots.txt",
+        "robotsStatus": 404,
+        "allowedHome": true,
+        "allowedLlmsTxt": true,
+        "userAgent": "ReproleafBenchmarkBot/2.0 (+https://evolkov.tech/tools/geo-benchmark-leaderboard)"
+      },
+      "homeStatus": 200,
+      "ttfbMs": 207,
+      "wordCount": 160,
+      "jsonLdTypes": [],
+      "llmsTxtStatus": 200,
+      "llmsTxtValid": true,
+      "aiBots": {
+        "OAI-SearchBot": "allowed",
+        "PerplexityBot": "allowed",
+        "GPTBot": "allowed",
+        "ClaudeBot": "allowed"
+      },
+      "score": 80
+    },
+    {
+      "origin": "https://orm.drizzle.team",
+      "retrievedAt": "2026-11-15T15:05:19.103Z",
+      "status": "ok",
+      "permissionLog": {
+        "robotsUrl": "https://orm.drizzle.team/robots.txt",
+        "robotsStatus": 200,
+        "allowedHome": true,
+        "allowedLlmsTxt": true,
+        "userAgent": "ReproleafBenchmarkBot/2.0 (+https://evolkov.tech/tools/geo-benchmark-leaderboard)"
+      },
+      "homeStatus": 200,
+      "ttfbMs": 621,
+      "wordCount": 7078,
+      "jsonLdTypes": [],
+      "llmsTxtStatus": 200,
+      "llmsTxtValid": true,
+      "aiBots": {
+        "OAI-SearchBot": "allowed",
+        "PerplexityBot": "allowed",
+        "GPTBot": "allowed",
+        "ClaudeBot": "allowed"
+      },
+      "score": 80
+    },
+    {
+      "origin": "https://trpc.io",
+      "retrievedAt": "2026-11-15T15:05:19.469Z",
+      "status": "ok",
+      "permissionLog": {
+        "robotsUrl": "https://trpc.io/robots.txt",
+        "robotsStatus": 200,
+        "allowedHome": true,
+        "allowedLlmsTxt": true,
+        "userAgent": "ReproleafBenchmarkBot/2.0 (+https://evolkov.tech/tools/geo-benchmark-leaderboard)"
+      },
+      "homeStatus": 200,
+      "ttfbMs": 395,
+      "wordCount": 762,
+      "jsonLdTypes": [
+        "WebSite",
+        "SoftwareSourceCode"
+      ],
+      "llmsTxtStatus": 200,
+      "llmsTxtValid": true,
+      "aiBots": {
+        "OAI-SearchBot": "allowed",
+        "PerplexityBot": "allowed",
+        "GPTBot": "allowed",
+        "ClaudeBot": "allowed"
+      },
+      "score": 100
+    },
+    {
+      "origin": "https://wordpress.org",
+      "retrievedAt": "2026-11-15T15:05:19.684Z",
+      "status": "ok",
+      "permissionLog": {
+        "robotsUrl": "https://wordpress.org/robots.txt",
+        "robotsStatus": 200,
+        "allowedHome": true,
+        "allowedLlmsTxt": true,
+        "userAgent": "ReproleafBenchmarkBot/2.0 (+https://evolkov.tech/tools/geo-benchmark-leaderboard)"
+      },
+      "homeStatus": 200,
+      "ttfbMs": 368,
+      "wordCount": 536,
+      "jsonLdTypes": [
+        "Organization",
+        "WebSite",
+        "WebPage"
+      ],
+      "llmsTxtStatus": 200,
+      "llmsTxtValid": true,
+      "aiBots": {
+        "OAI-SearchBot": "allowed",
+        "PerplexityBot": "allowed",
+        "GPTBot": "allowed",
+        "ClaudeBot": "allowed"
+      },
+      "score": 100
+    },
+    {
+      "origin": "https://evolkov.tech",
+      "retrievedAt": "2026-11-15T15:05:20.803Z",
+      "status": "ok",
+      "permissionLog": {
+        "robotsUrl": "https://evolkov.tech/robots.txt",
+        "robotsStatus": 200,
+        "allowedHome": true,
+        "allowedLlmsTxt": true,
+        "userAgent": "ReproleafBenchmarkBot/2.0 (+https://evolkov.tech/tools/geo-benchmark-leaderboard)"
+      },
+      "homeStatus": 200,
+      "ttfbMs": 589,
+      "wordCount": 280,
+      "jsonLdTypes": [
+        "WebPage",
+        "BreadcrumbList",
+        "WebSite",
+        "Person"
+      ],
+      "llmsTxtStatus": 200,
+      "llmsTxtValid": true,
+      "aiBots": {
+        "OAI-SearchBot": "allowed",
+        "PerplexityBot": "allowed",
+        "GPTBot": "allowed",
+        "ClaudeBot": "allowed"
+      },
+      "score": 100
+    }
+  ]
+}

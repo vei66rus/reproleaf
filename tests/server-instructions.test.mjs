@@ -25,13 +25,13 @@ test('shared instructions keep the entire workflow and mode note self-contained 
 test('official HTTP initializer receives public guidance in both API routing modes',async()=>{
  for(const publicGatewayOnly of [true,false]){
   const api=await startApi({port:0,publicGatewayOnly,aiOptions:{envPath:'missing-instructions-test.env',enabled:false,apiKey:'',model:''}}),client=new Client({name:'instructions-http-test',version:'1.0'});
-  try{await client.connect(new StreamableHTTPClientTransport(new URL(api.url+'/v1/mcp')));const tools=(await client.listTools()).tools;assert.equal(tools.length,39);assert.equal(client.getInstructions(),getServerInstructions({publicMode:true}));assertPublic(client.getInstructions(),tools);}finally{await client.close();await api.close();}
+  try{await client.connect(new StreamableHTTPClientTransport(new URL(api.url+'/v1/mcp')));const tools=(await client.listTools()).tools;assert.equal(tools.length,46);assert.equal(client.getInstructions(),getServerInstructions({publicMode:true}));assertPublic(client.getInstructions(),tools);}finally{await client.close();await api.close();}
  }
 });
 for(const publicMode of [true,false])test(`official stdio initializer receives accurate ${publicMode?'public':'local'} capability guidance`,async()=>{
  const client=new Client({name:'instructions-stdio-test',version:'1.0'}),transport=new StdioClientTransport({command:process.execPath,args:[path.join(root,'src/mcp.mjs')],cwd:root,env:{PATH:process.env.PATH,REPROLEAF_PUBLIC_MCP:publicMode?'1':'0'},stderr:'pipe'});
  try{
   await client.connect(transport);const instructions=client.getInstructions(),tools=(await client.listTools()).tools;assert.equal(instructions,getServerInstructions({publicMode}));
-  if(publicMode){assert.equal(tools.length,37);assertPublic(instructions,tools);}else{assertWorkflow(instructions);assert.equal(tools.length,43);assert.ok(instructions.includes('allowlisted fixture/evidence reads'));assert.ok(instructions.includes('configured private-project tools'));assert.ok(instructions.includes('task decisions require explicit request'));assert.ok(tools.some(tool=>tool.name==='update_project_task'&&tool.annotations.readOnlyHint===false));}
+  if(publicMode){assert.equal(tools.length,44);assertPublic(instructions,tools);}else{assertWorkflow(instructions);assert.equal(tools.length,50);assert.ok(instructions.includes('allowlisted fixture/evidence reads'));assert.ok(instructions.includes('configured private-project tools'));assert.ok(instructions.includes('task decisions require explicit request'));assert.ok(tools.some(tool=>tool.name==='update_project_task'&&tool.annotations.readOnlyHint===false));}
  }finally{await client.close();}
 });

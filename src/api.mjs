@@ -38,6 +38,12 @@ import {llmsBundleSchema,buildLlmsBundle} from './llms-bundle.mjs';
 import {llmsBudgetSchema,auditLlmsBudget} from './llms-budget-audit.mjs';
 import {geoReadinessSchema,auditGeoReadiness} from './geo-readiness-audit.mjs';
 import {listMethodologies,buildMethodologyPacketSchema,buildMethodologyPacket,validateMethodologyResultSchema,validateMethodologyResult} from './methodology-packets.mjs';
+import {serpClusterSchema,clusterSerpKeywords} from './serp-clusterer.mjs';
+import {serpGapSchema,analyzeSerpGap} from './serp-gap-analyzer.mjs';
+import {cocoonPlanSchema,planCocoonAndAnchors} from './cocoon-planner.mjs';
+import {contentBriefSchema,generateContentBrief} from './content-brief-generator.mjs';
+import {eeatAuditSchema,auditEeatSignals} from './eeat-audit.mjs';
+import {liveCrawlHreflangSchema,auditLiveCrawlHreflang,segmentedSitemapSchema,buildSegmentedSitemaps} from './sitemap-indexnow.mjs';
 import {caseCitationUrl,listCheckRules,getCheckRule,listCheckRulesSchema,getCheckRuleSchema} from './check-rules.mjs';
 import {publicGatewayLimits,parsePublicRpc,rpcError,assertPublicRequestBudget,proxyClientIdentity,exactOriginAllowed,normalizePeer,acceptsPublicMcp} from './public-gateway-policy.mjs';
 import {getServerInstructions} from './server-instructions.mjs';
@@ -93,7 +99,14 @@ const precomputedSchemas={
   llmsBudgetAudit:z.toJSONSchema(llmsBudgetSchema),
   geoReadinessAudit:z.toJSONSchema(geoReadinessSchema),
   methodologyPacket:z.toJSONSchema(buildMethodologyPacketSchema),
-  validateMethodologyResult:z.toJSONSchema(validateMethodologyResultSchema)
+  validateMethodologyResult:z.toJSONSchema(validateMethodologyResultSchema),
+  serpCluster:z.toJSONSchema(serpClusterSchema),
+  serpGap:z.toJSONSchema(serpGapSchema),
+  cocoonPlan:z.toJSONSchema(cocoonPlanSchema),
+  contentBrief:z.toJSONSchema(contentBriefSchema),
+  eeatAudit:z.toJSONSchema(eeatAuditSchema),
+  liveCrawlHreflang:z.toJSONSchema(liveCrawlHreflangSchema),
+  segmentedSitemap:z.toJSONSchema(segmentedSitemapSchema)
  },
  findingCodes:findingCodeCatalog,
  errorCodes:errorCodeCatalog,
@@ -149,7 +162,14 @@ const publicMcpTools=[
  {name:'audit_llms_budget',description:'Audit llms.txt structure and linked page token footprint against a target context window, detecting duplicate URLs, missing targets and oversized core sections.',inputSchema:z.toJSONSchema(llmsBudgetSchema),annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}},
  {name:'audit_geo_readiness',description:'Run a composite GEO and AI citation readiness scorecard across AI crawler access, llms.txt, JSON-LD, answer-first structure, RAG chunks and prompt-injection safety.',inputSchema:z.toJSONSchema(geoReadinessSchema),annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}},
  {name:'list_methodologies',description:'List deterministic SEO/GEO review methodologies, sections and scope limits.',inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}},
- {name:'prepare_methodology_packet',description:'Build a SHA-256 bound methodology review packet with prompt and JSON output contract for BYO-model or local Ollama execution.',inputSchema:z.toJSONSchema(buildMethodologyPacketSchema),annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}}
+ {name:'prepare_methodology_packet',description:'Build a SHA-256 bound methodology review packet with prompt and JSON output contract for BYO-model or local Ollama execution.',inputSchema:z.toJSONSchema(buildMethodologyPacketSchema),annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}},
+ {name:'cluster_serp_keywords',description:'Cluster keyword SERP Top-10 URLs using Hard or Soft overlap and bind clusters to existing site pages.',inputSchema:z.toJSONSchema(serpClusterSchema),annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}},
+ {name:'analyze_serp_gap',description:'Compare target HTML/profile against Top-10 SERP competitor benchmarks for word count, headings, tables, FAQ, Schema types and recurring terms.',inputSchema:z.toJSONSchema(serpGapSchema),annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}},
+ {name:'plan_cocoon_anchors',description:'Plan Pillar->Cluster->Supporting internal links, check anchor distribution balance and match donor draft paragraphs without network requests.',inputSchema:z.toJSONSchema(cocoonPlanSchema),annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}},
+ {name:'generate_content_brief',description:'Compile a structured Markdown and JSON SEO/GEO content brief with Answer-First limits, RAG chunk targets, glossary rules and explicit [FACT_GAP] placeholders.',inputSchema:z.toJSONSchema(contentBriefSchema),annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}},
+ {name:'audit_eeat_signals',description:'Audit HTML and JSON-LD for E-E-A-T trust signals (author byline, Person/Organization schema, publication/modified dates, primary sources and trust links).',inputSchema:z.toJSONSchema(eeatAuditSchema),annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}},
+ {name:'audit_live_crawl_hreflang',description:'Audit hreflang reciprocity, self-links and non-200 targets across exported crawl pages or static HTML captures without network requests.',inputSchema:z.toJSONSchema(liveCrawlHreflangSchema),annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}},
+ {name:'build_segmented_sitemaps',description:'Generate origin-validated segmented XML urlsets and sitemapindex without network requests.',inputSchema:z.toJSONSchema(segmentedSitemapSchema),annotations:{readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:false}}
 ];
 
 function handlePublicMcpRpc(rpc){
@@ -255,6 +275,20 @@ function handlePublicMcpRpc(rpc){
     data=listMethodologies();
    }else if(toolName==='prepare_methodology_packet'){
     data=buildMethodologyPacket(args);
+   }else if(toolName==='cluster_serp_keywords'){
+    data=clusterSerpKeywords(args);
+   }else if(toolName==='analyze_serp_gap'){
+    data=analyzeSerpGap(args);
+   }else if(toolName==='plan_cocoon_anchors'){
+    data=planCocoonAndAnchors(args);
+   }else if(toolName==='generate_content_brief'){
+    data=generateContentBrief(args);
+   }else if(toolName==='audit_eeat_signals'){
+    data=auditEeatSignals(args);
+   }else if(toolName==='audit_live_crawl_hreflang'){
+    data=auditLiveCrawlHreflang(args);
+   }else if(toolName==='build_segmented_sitemaps'){
+    data=buildSegmentedSitemaps(args);
    }else{
     return {jsonrpc:'2.0',id,error:{code:-32601,message:`Unknown or restricted tool: ${String(toolName)}`}};
    }
@@ -290,7 +324,7 @@ export async function startApi({port=4180,listenHost='127.0.0.1',publicGatewayOn
  const aiConfig=publicGatewayOnly?{enabled:false,apiKey:'',model:'',dailyBudgetUsd:0,inputPricePerMillion:0,outputPricePerMillion:0}:resolveAiConfig(aiOptions);
  const aiBudgetTracker=publicGatewayOnly?null:aiOptions.budgetTracker||createAiBudgetTracker(aiConfig);
  const getEndpoints=new Set(['/health','/v1/schemas','/v1/cases','/v1/clients','/v1/ai-status','/v1/methodologies']);
- const postEndpoints=new Set(['/v1/editorial','/v1/blog','/v1/diagnose','/v1/compare','/v1/mcp','/v1/ai-review','/v1/sanitize-report','/v1/contribution-preview','/v1/rewrite-guard','/v1/html-audit','/v1/schema-audit','/v1/social-audit','/v1/crawl-policy-audit','/v1/redirect-audit','/v1/cocoon-audit','/v1/hreflang-audit','/v1/llms-txt-audit','/v1/llms-txt-generate','/v1/ai-crawler-audit','/v1/rag-chunk-audit','/v1/grounding-audit','/v1/terminology-audit','/v1/hydration-diff-audit','/v1/prompt-injection-audit','/v1/serp-snippet-audit','/v1/dom-perf-audit','/v1/cannibalization-audit','/v1/indexation-hygiene-audit','/v1/editorial-clarity-audit','/v1/answer-first-audit','/v1/suggest-seo-fixes','/v1/build-llms-bundle','/v1/audit-llms-budget','/v1/audit-geo-readiness','/v1/methodology-packet','/v1/validate-methodology-result']);
+ const postEndpoints=new Set(['/v1/editorial','/v1/blog','/v1/diagnose','/v1/compare','/v1/mcp','/v1/ai-review','/v1/sanitize-report','/v1/contribution-preview','/v1/rewrite-guard','/v1/html-audit','/v1/schema-audit','/v1/social-audit','/v1/crawl-policy-audit','/v1/redirect-audit','/v1/cocoon-audit','/v1/hreflang-audit','/v1/llms-txt-audit','/v1/llms-txt-generate','/v1/ai-crawler-audit','/v1/rag-chunk-audit','/v1/grounding-audit','/v1/terminology-audit','/v1/hydration-diff-audit','/v1/prompt-injection-audit','/v1/serp-snippet-audit','/v1/dom-perf-audit','/v1/cannibalization-audit','/v1/indexation-hygiene-audit','/v1/editorial-clarity-audit','/v1/answer-first-audit','/v1/suggest-seo-fixes','/v1/build-llms-bundle','/v1/audit-llms-budget','/v1/audit-geo-readiness','/v1/methodology-packet','/v1/validate-methodology-result','/v1/serp-cluster','/v1/serp-gap','/v1/cocoon-plan','/v1/content-brief','/v1/eeat-audit','/v1/hreflang-live','/v1/sitemap-split']);
 
  function checkRateLimit(clientKey){
   const now=Date.now();
@@ -426,6 +460,13 @@ export async function startApi({port=4180,listenHost='127.0.0.1',publicGatewayOn
    else if(urlPath==='/v1/audit-geo-readiness')result=auditGeoReadiness(input);
    else if(urlPath==='/v1/methodology-packet')result=buildMethodologyPacket(input);
    else if(urlPath==='/v1/validate-methodology-result')result=validateMethodologyResult(input);
+   else if(urlPath==='/v1/serp-cluster')result=clusterSerpKeywords(input);
+   else if(urlPath==='/v1/serp-gap')result=analyzeSerpGap(input);
+   else if(urlPath==='/v1/cocoon-plan')result=planCocoonAndAnchors(input);
+   else if(urlPath==='/v1/content-brief')result=generateContentBrief(input);
+   else if(urlPath==='/v1/eeat-audit')result=auditEeatSignals(input);
+   else if(urlPath==='/v1/hreflang-live')result=auditLiveCrawlHreflang(input);
+   else if(urlPath==='/v1/sitemap-split')result=buildSegmentedSitemaps(input);
    else{
     const parsed=compareInputSchema.parse(input);
     result=compareReports(parsed.before,parsed.after);

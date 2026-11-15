@@ -1,0 +1,30 @@
+name: Reproleaf Docusaurus GEO & Docs Audit
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci
+      - run: npm run build
+      - uses: vei66rus/reproleaf/integrations/github-action@main
+        with:
+          dir: build
+          preset: docs
+          format: json
+          output: reproleaf-report.json
+          comment-pr: 'true'
+          github-token: ${{ secrets.GITHUB_TOKEN }}

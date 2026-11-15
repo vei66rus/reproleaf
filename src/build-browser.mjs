@@ -16,14 +16,18 @@ export async function buildBrowser(output=path.join(root,'dist/browser')){
  const projects=emitted(await build({...settings,entryPoints:['src/browser/dev-projects.js'],external:['./'+diagnose],define:{__REPROLEAF_DIAGNOSE__:JSON.stringify('./'+diagnose)}}));
  const install=emitted(await build({...settings,entryPoints:['src/browser/install.js']}));
  const loader=emitted(await build({...settings,entryPoints:['src/browser/loader.js'],external:['./'+playground],define:{__REPROLEAF_APP__:JSON.stringify('./'+playground)}}));
+ const suite=await build({...settings,entryPoints:['src/browser/tool-loader.js'],splitting:true,chunkNames:'tool-chunk-[hash]'});
+ const suiteFiles=Object.keys(suite.metafile.outputs).map(p=>path.basename(p)).filter(name=>name.endsWith('.js'));
+ const toolLoader=suiteFiles.find(name=>name.startsWith('tool-loader-'));
+ const toolChunks=suiteFiles.filter(name=>name!==toolLoader).sort();
  const css=Buffer.concat([await readFile(path.join(root,'src/browser/playground.css')),await readFile(path.join(root,'src/browser/selects.css')),await readFile(path.join(root,'src/browser/projects.css'))]);const styles='playground-'+createHash('sha256').update(css).digest('hex').slice(0,10)+'.css';await writeFile(path.join(output,styles),css);
- const activeNames=new Set([loader,playground,worker,install,projects,diagnose,anchorEvidence,styles,`${anchorEvidence}.LEGAL.txt`,`${diagnose}.LEGAL.txt`,`${loader}.LEGAL.txt`,`${playground}.LEGAL.txt`,`${worker}.LEGAL.txt`,`${install}.LEGAL.txt`,`${projects}.LEGAL.txt`,'manifest.json','index.html','ru.html','dev.html','dev-ru.html','LICENSE','THIRD-PARTY-ICONS-LICENSE.txt']);
+ const activeNames=new Set([loader,playground,worker,install,projects,diagnose,anchorEvidence,...suiteFiles,styles,`${anchorEvidence}.LEGAL.txt`,`${diagnose}.LEGAL.txt`,`${loader}.LEGAL.txt`,`${playground}.LEGAL.txt`,`${worker}.LEGAL.txt`,`${install}.LEGAL.txt`,`${projects}.LEGAL.txt`,...suiteFiles.map(f=>`${f}.LEGAL.txt`),'manifest.json','index.html','ru.html','dev.html','dev-ru.html','LICENSE','THIRD-PARTY-ICONS-LICENSE.txt']);
  for(const entry of await readdir(output)){
-  if(!activeNames.has(entry)&&/^(loader|playground|editorial-worker|dev-projects|diagnose|install|recommendation-evidence-copy)-/.test(entry)){
+  if(!activeNames.has(entry)&&/^(loader|playground|editorial-worker|dev-projects|diagnose|install|recommendation-evidence-copy|tool-loader|tool-chunk|ai-crawler|serp-preview|llms-studio|geo-clarity|cocoon-matrix|cocoon-visualizer|hreflang-sitemap|benchmark-leaderboard)-/.test(entry)){
    await rm(path.join(output,entry),{force:true});
   }
  }
- const manifest={version,loader,playground,worker,install,projects,diagnose,anchorEvidence,styles,bytes:{}};for(const name of [loader,playground,worker,install,projects,diagnose,anchorEvidence,styles])manifest.bytes[name]=(await readFile(path.join(output,name))).length;
+ const manifest={version,loader,playground,worker,install,projects,diagnose,anchorEvidence,toolLoader,toolChunks,styles,bytes:{}};for(const name of [loader,playground,worker,install,projects,diagnose,anchorEvidence,toolLoader,...toolChunks,styles])manifest.bytes[name]=(await readFile(path.join(output,name))).length;
  await writeFile(path.join(output,'manifest.json'),JSON.stringify(manifest,null,2)+'\n');
  for(const language of ['en','ru'])for(const kind of ['seo','web']){
   const suffix=(kind==='web'?'-dev':'')+(language==='ru'?'-ru':'');let template;
@@ -33,7 +37,7 @@ export async function buildBrowser(output=path.join(root,'dist/browser')){
  }
  await writeFile(path.join(output,'THIRD-PARTY-ICONS-LICENSE.txt'),await readFile(path.join(root,'integrations/THIRD-PARTY-ICONS-LICENSE.txt')));
  await writeFile(path.join(output,'THIRD-PARTY-ZOD-LICENSE.txt'),await readFile(path.join(root,'node_modules/zod/LICENSE')));
- const dependencyNotices=[];for(const name of ['zod','marked']){const pkg=JSON.parse(await readFile(path.join(root,'node_modules',name,'package.json'),'utf8'));dependencyNotices.push(`${name} ${pkg.version}\n\n${await readFile(path.join(root,'node_modules',name,'LICENSE'),'utf8')}`);}
+ const dependencyNotices=[];for(const name of ['zod','marked','parse5']){const pkg=JSON.parse(await readFile(path.join(root,'node_modules',name,'package.json'),'utf8'));dependencyNotices.push(`${name} ${pkg.version}\n\n${await readFile(path.join(root,'node_modules',name,'LICENSE'),'utf8')}`);}
  await writeFile(path.join(output,'THIRD-PARTY-DEPENDENCIES-LICENSE.txt'),dependencyNotices.join('\n\n'));
  await writeFile(path.join(output,'LICENSE'),await readFile(path.join(root,'LICENSE')));
  return manifest;

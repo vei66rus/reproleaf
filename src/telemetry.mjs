@@ -52,3 +52,25 @@ export function getTelemetrySummary(recorder){
   byTool:{...(recorder?.byTool||{})}
  };
 }
+
+export function summarizeToolDemand(recorder){
+ const entries=Object.entries(recorder?.byTool||{}).map(([tool,stats])=>{
+  const runs=Number(stats?.runs||0);
+  const failed=Number(stats?.failed||0);
+  return {
+   tool,
+   runs,
+   passed:Number(stats?.passed||0),
+   failed,
+   errors:Number(stats?.errors||0),
+   warnings:Number(stats?.warnings||0),
+   failRatePct:runs>0?Math.round((failed/runs)*1000)/10:0
+  };
+ });
+ entries.sort((a,b)=>b.runs-a.runs||a.tool.localeCompare(b.tool));
+ return {
+  enabled:Boolean(recorder?.enabled),
+  totalRuns:Number(recorder?.totals?.runs||0),
+  toolsRanked:entries
+ };
+}

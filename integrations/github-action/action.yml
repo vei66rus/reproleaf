@@ -1,5 +1,5 @@
-name: Reproleaf SEO Audit
-description: Run deterministic HTML, Schema.org, OpenGraph, and AI crawler audits across built static files.
+name: Reproleaf SEO & GEO Audit
+description: Run deterministic HTML, Schema.org, OpenGraph, and AI crawler audits across built static files with optional baseline delta and PR comment.
 inputs:
   dir:
     description: Directory containing built HTML files
@@ -13,6 +13,37 @@ inputs:
     description: Output file path
     required: false
     default: reproleaf-results.sarif
+  preset:
+    description: Audit preset (blog, docs, landing, or saas)
+    required: false
+    default: saas
+  max-files:
+    description: Maximum HTML files to scan (1 to 500)
+    required: false
+    default: '500'
+  baseline:
+    description: Optional path to baseline Reproleaf batch JSON report for regression delta comparison
+    required: false
+    default: ''
+  comment-pr:
+    description: Post or update a compact PR summary comment on pull_request events from same-repo branches
+    required: false
+    default: 'false'
+  github-token:
+    description: GitHub token used when comment-pr is true
+    required: false
+    default: ''
+outputs:
+  ok:
+    description: Whether total audit errors equals zero
+  errors:
+    description: Total audit errors count
+  warnings:
+    description: Total audit warnings count
+  pages-audited:
+    description: Number of HTML files scanned
+  report-path:
+    description: Written report output file path
 runs:
   using: node20
   main: run.mjs

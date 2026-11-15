@@ -1,19 +1,29 @@
 import {readFile,mkdir,writeFile,access} from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
-import {chromium} from 'playwright';
 import {catalog,root,getCase} from './catalog.mjs';
 import {buildSite} from './build.mjs';
 import {startServer} from './server.mjs';
 import {checks} from './checks.mjs';
 import {sha256,currentEvidenceInputs} from './evidence.mjs';
-async function browserOptions(){
+async function loadPlaywright(){
+ try{
+  return await import('playwright');
+ }catch(error){
+  if(error?.code==='ERR_MODULE_NOT_FOUND'||String(error?.message||'').includes('playwright')){
+   throw Error('Playwright is optional and not installed. Run: npm install playwright && npx playwright install chromium');
+  }
+  throw error;
+ }
+}
+async function browserOptions(chromium){
  const paths=[process.env.MWC_BROWSER_PATH,chromium.executablePath(),process.platform==='win32'?'C:/Program Files/Google/Chrome/Application/chrome.exe':null,process.platform==='win32'?'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe':null].filter(Boolean);
  for(const executablePath of paths)try{await access(executablePath);return {headless:true,executablePath};}catch{}
  throw Error('Browser missing. Run npx playwright install chromium, or set MWC_BROWSER_PATH to a Chromium executable.');
 }
 export async function verify({id,variant='both',output}={}){
  if(!['broken','fixed','both'].includes(variant))throw Error('Invalid variant');
+ const {chromium}=await loadPlaywright();
  const cases=id?[getCase(id)]:catalog.cases;
  await buildSite();
  let browser;
@@ -23,7 +33,7 @@ export async function verify({id,variant='both',output}={}){
  Object.assign(report,await currentEvidenceInputs());
  const server=await startServer();
  try{
-  browser=await chromium.launch(await browserOptions());report.environment.browser=browser.version();
+  browser=await chromium.launch(await browserOptions(chromium));report.environment.browser=browser.version();
   for(const item of cases)for(const viewport of [{width:360,height:640},{width:390,height:844}])for(const mode of variant==='both'?['broken','fixed']:[variant]){
    const context=await browser.newContext({viewport,isMobile:true,hasTouch:true,deviceScaleFactor:1});
    const record={caseId:item.id,stack:item.stack,variant:mode,viewport,behaviorPassed:null,expectedBehaviorPass:mode==='fixed',matchesExpected:false,status:'error',observations:null,pageErrors:[],blockedRequests:[]};

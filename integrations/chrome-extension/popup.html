@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Reproleaf Active Tab Inspector</title>
+  <title>Reproleaf SEO & GEO Inspector</title>
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
@@ -12,21 +12,27 @@
       <div class="rl-ext-brand">
         <span class="rl-ext-dot"></span>
         <strong>Reproleaf</strong>
-        <code>activeTab</code>
+        <code id="badge-text">activeTab only</code>
       </div>
-      <span class="rl-ext-badge">Local-only</span>
+      <button type="button" id="lang-btn" class="rl-ext-badge rl-ext-lang">EN</button>
     </header>
-    <p class="rl-ext-note">Чтение текущей вкладки выполняется только по нажатию кнопки. Фоновый сбор истории и сетевая отправка отключены.</p>
+    <p id="note-text" class="rl-ext-note">Чтение открытой вкладки только по клику. Нулевая сетевая телеметрия.</p>
     <div class="rl-ext-actions">
-      <button type="button" id="inspect-btn" class="rl-ext-primary">Проверить активную вкладку</button>
-      <button type="button" id="copy-packet-btn" class="rl-ext-secondary" disabled>Скопировать JSON-пакет</button>
+      <button type="button" id="inspect-btn" class="rl-ext-primary">Проверить вкладку</button>
+      <button type="button" id="extract-btn" class="rl-ext-secondary">SERP / Конкурент JSON</button>
+    </div>
+    <div class="rl-ext-actions rl-ext-handoff">
+      <button type="button" id="copy-packet-btn" class="rl-ext-secondary" disabled>Пакет Reproleaf</button>
+      <button type="button" id="copy-prompt-btn" class="rl-ext-secondary" disabled>Промпт для Cursor / Claude</button>
+      <button type="button" id="open-web-btn" class="rl-ext-secondary" disabled>Открыть на evolkov.tech</button>
     </div>
     <p id="status" class="rl-ext-status" role="status" aria-live="polite"></p>
     <section id="results" class="rl-ext-results" hidden>
       <div id="metrics" class="rl-ext-metrics"></div>
+      <pre id="extract-preview" class="rl-ext-preview" hidden></pre>
       <ul id="findings" class="rl-ext-findings"></ul>
     </section>
   </main>
-  <script src="popup.js"></script>
+  <script type="module" src="popup.js"></script>
 </body>
 </html>

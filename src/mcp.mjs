@@ -42,6 +42,12 @@ import {llmsBundleSchema,buildLlmsBundle} from './llms-bundle.mjs';
 import {llmsBudgetSchema,auditLlmsBudget} from './llms-budget-audit.mjs';
 import {geoReadinessSchema,auditGeoReadiness} from './geo-readiness-audit.mjs';
 import {listMethodologies,buildMethodologyPacketSchema,buildMethodologyPacket} from './methodology-packets.mjs';
+import {serpClusterSchema,clusterSerpKeywords} from './serp-clusterer.mjs';
+import {serpGapSchema,analyzeSerpGap} from './serp-gap-analyzer.mjs';
+import {cocoonPlanSchema,planCocoonAndAnchors} from './cocoon-planner.mjs';
+import {contentBriefSchema,generateContentBrief} from './content-brief-generator.mjs';
+import {eeatAuditSchema,auditEeatSignals} from './eeat-audit.mjs';
+import {liveCrawlHreflangSchema,auditLiveCrawlHreflang,segmentedSitemapSchema,buildSegmentedSitemaps} from './sitemap-indexnow.mjs';
 import {getServerInstructions} from './server-instructions.mjs';
 export function createServer({publicMode=process.env.REPROLEAF_PUBLIC_MCP==='1',siteProjectOptions={}}={}){
 const server=new McpServer({name:'reproleaf',version},{maxToolInputElements:400000,instructions:getServerInstructions({publicMode})});
@@ -108,6 +114,13 @@ server.registerTool('audit_llms_budget',{description:'Audit llms.txt structure a
 server.registerTool('audit_geo_readiness',{description:'Run a composite GEO and AI citation readiness scorecard across AI crawler access, llms.txt, JSON-LD, answer-first structure, RAG chunks and prompt-injection safety.',inputSchema:geoReadinessSchema,annotations},async input=>response(auditGeoReadiness(input)));
 server.registerTool('list_methodologies',{description:'List deterministic SEO/GEO review methodologies, sections and scope limits.',inputSchema:z.object({}),annotations},async()=>response(listMethodologies()));
 server.registerTool('prepare_methodology_packet',{description:'Build a SHA-256 bound methodology review packet with prompt and JSON output contract for BYO-model or local Ollama execution.',inputSchema:buildMethodologyPacketSchema,annotations},async input=>response(buildMethodologyPacket(input)));
+server.registerTool('cluster_serp_keywords',{description:'Cluster keyword SERP Top-10 URLs using Hard or Soft overlap and bind clusters to existing site pages.',inputSchema:serpClusterSchema,annotations},async input=>response(clusterSerpKeywords(input)));
+server.registerTool('analyze_serp_gap',{description:'Compare target HTML/profile against Top-10 SERP competitor benchmarks for word count, headings, tables, FAQ, Schema types and recurring terms.',inputSchema:serpGapSchema,annotations},async input=>response(analyzeSerpGap(input)));
+server.registerTool('plan_cocoon_anchors',{description:'Plan Pillar->Cluster->Supporting internal links, check anchor distribution balance and match donor draft paragraphs without network requests.',inputSchema:cocoonPlanSchema,annotations},async input=>response(planCocoonAndAnchors(input)));
+server.registerTool('generate_content_brief',{description:'Compile a structured Markdown and JSON SEO/GEO content brief with Answer-First limits, RAG chunk targets, glossary rules and explicit [FACT_GAP] placeholders.',inputSchema:contentBriefSchema,annotations},async input=>response(generateContentBrief(input)));
+server.registerTool('audit_eeat_signals',{description:'Audit HTML and JSON-LD for E-E-A-T trust signals (author byline, Person/Organization schema, publication/modified dates, primary sources and trust links).',inputSchema:eeatAuditSchema,annotations},async input=>response(auditEeatSignals(input)));
+server.registerTool('audit_live_crawl_hreflang',{description:'Audit hreflang reciprocity, self-links and non-200 targets across exported crawl pages or static HTML captures without network requests.',inputSchema:liveCrawlHreflangSchema,annotations},async input=>response(auditLiveCrawlHreflang(input)));
+server.registerTool('build_segmented_sitemaps',{description:'Generate origin-validated segmented XML urlsets and sitemapindex without network requests.',inputSchema:segmentedSitemapSchema,annotations},async input=>response(buildSegmentedSitemaps(input)));
 return server;
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){

@@ -16,7 +16,7 @@ function stripComments(line){
  return (idx===-1?line:line.slice(0,idx)).trim();
 }
 
-function parseRobotsTxt(raw){
+export function parseRobotsTxt(raw){
  const lines=String(raw||'').split(/\r?\n/);
  const groups=[];
  let currentAgents=[];
@@ -68,7 +68,7 @@ function matchRobotsPattern(pathAndQuery,pattern){
  return regex.test(pathAndQuery);
 }
 
-function isBlockedByRules(pathAndQuery,rules){
+export function isBlockedByRules(pathAndQuery,rules){
  let bestMatch=null;
  for(const rule of rules){
   if(matchRobotsPattern(pathAndQuery,rule.pattern)){

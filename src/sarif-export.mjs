@@ -1,4 +1,6 @@
-export function toSarifReport(batchReport,{toolVersion='1.0.0'}={}){
+import {version} from './version.mjs';
+
+export function toSarifReport(batchReport,{toolVersion=version}={}){
  const rulesMap=new Map();
  const results=[];
 

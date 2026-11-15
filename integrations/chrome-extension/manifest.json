@@ -1,14 +1,26 @@
 {
   "manifest_version": 3,
-  "name": "Reproleaf Active Tab Inspector",
-  "version": "0.7.0",
-  "description": "Local-only structural SEO and mobile layout inspector for the active tab. Runs only on explicit click with activeTab permission.",
+  "name": "Reproleaf SEO & GEO Inspector",
+  "version": "1.1.0",
+  "description": "Local-only SEO, JSON-LD, DOM performance, SERP/competitor extractor and AI visibility inspector. activeTab click-only.",
   "permissions": [
     "activeTab",
     "scripting"
   ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
   "action": {
     "default_title": "Inspect current tab in Reproleaf",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png"
+    },
     "default_popup": "popup.html"
   }
 }

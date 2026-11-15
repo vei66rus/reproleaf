@@ -1,0 +1,21 @@
+name: Reproleaf WordPress Static HTML Audit
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npx --yes reproleaf batch-audit --dir public-html --preset blog --format sarif --output reproleaf-wp.sarif
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reproleaf-wp-sarif
+          path: reproleaf-wp.sarif
