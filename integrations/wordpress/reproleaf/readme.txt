@@ -2,7 +2,7 @@
 Contributors: vei66rus
 Requires at least: 6.5
 Requires PHP: 8.1
-Stable tag: 0.7.0
+Stable tag: 2.3.1
 License: MIT
 
 Export published stored-content links for a local blog audit.

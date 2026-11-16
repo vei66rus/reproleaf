@@ -16,6 +16,19 @@ function findingKey(f){
  return `${f.code}::${target}`;
 }
 
+function unconfirmedReasons(finding,currentPages){
+ const targets=finding.url?[finding.url]:Array.isArray(finding.urls)?finding.urls:[];
+ const reasons=[];
+ if(targets.some(url=>!currentPages.has(url)))reasons.push('page-absent');
+ if(targets.some(url=>{
+  const page=currentPages.get(url);
+  return page&&(page.status===0||page.error||page.readError||page.fetchError||page.readFailed||page.fetchFailed||page.state==='failed');
+ }))reasons.push('read-failed');
+ // Finding-only exports do not record per-rule execution or a comparable engine contract.
+ reasons.push('engine-unknown','rule-coverage-unknown');
+ return reasons;
+}
+
 export function diffCrawlSnapshots(baseline,current){
  const basePages=new Map((baseline.pages||[]).map(p=>[p.url,p]));
  const currPages=new Map((current.pages||[]).map(p=>[p.url,p]));
@@ -70,6 +83,7 @@ export function diffCrawlSnapshots(baseline,current){
 
  const newFindings=[];
  const resolvedFindings=[];
+ const unconfirmedFindings=[];
  const persistingFindings=[];
 
  for(const [k,f] of currFindings.entries()){
@@ -77,14 +91,22 @@ export function diffCrawlSnapshots(baseline,current){
   else newFindings.push(f);
  }
  for(const [k,f] of baseFindings.entries()){
-  if(!currFindings.has(k))resolvedFindings.push(f);
+  if(!currFindings.has(k)){
+   const verificationReasons=unconfirmedReasons(f,currPages);
+   unconfirmedFindings.push({...f,reason:verificationReasons[0],verificationReasons});
+  }
  }
 
  const newErrors=newFindings.filter(f=>f.severity==='error').length;
  const statusRegressions=statusChanges.filter(s=>s.regression).length;
 
+ const noObservedRegressions=newErrors===0&&statusRegressions===0&&wordCountDrops.length===0;
  return {
-  ok:newErrors===0&&statusRegressions===0&&wordCountDrops.length===0,
+  ok:false,
+  verificationComplete:false,
+  noObservedRegressions,
+  outcome:noObservedRegressions?'unconfirmed':'regressed',
+  coverage:{state:'unknown',engine:'unknown',ruleExecution:'unknown',scope:'Supplied page and finding inventories only. Missing findings do not prove a rule ran successfully, pages were read, or an issue was fixed.'},
   summary:{
    baselinePages:basePages.size,
    currentPages:currPages.size,
@@ -92,6 +114,8 @@ export function diffCrawlSnapshots(baseline,current){
    removedUrlCount:removedUrls.length,
    newFindingCount:newFindings.length,
    resolvedFindingCount:resolvedFindings.length,
+   disappearedFindingCount:unconfirmedFindings.length,
+   unconfirmedFindingCount:unconfirmedFindings.length,
    persistingFindingCount:persistingFindings.length,
    statusChangeCount:statusChanges.length,
    statusRegressionCount:statusRegressions,
@@ -106,7 +130,10 @@ export function diffCrawlSnapshots(baseline,current){
   titleChanges,
   wordCountDrops,
   newFindings,
-  resolvedFindings
+  resolvedFindings,
+  persistingFindings,
+  disappearedFindings:unconfirmedFindings,
+  unconfirmedFindings
  };
 }
 

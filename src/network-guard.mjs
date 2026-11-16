@@ -1,5 +1,6 @@
 import {lookup} from 'node:dns/promises';
 import {isIP} from 'node:net';
+import {decodeHtmlBytes} from './html-byte-decoder.mjs';
 
 const blockedHostnames=new Set(['localhost','localhost.localdomain','ip6-localhost','ip6-loopback','metadata.google.internal','metadata','169.254.169.254']);
 
@@ -157,6 +158,7 @@ export async function safeFetchPage(rawUrl,{
  requireOrigin=null,
  maxRedirects=5,
  maxBytes=2097152,
+ maxDecodedBytes=Math.min(maxBytes*3,25165824),
  timeoutMs=15000,
  headers={},
  acceptContentTypes=null
@@ -213,6 +215,12 @@ export async function safeFetchPage(rawUrl,{
   }
 
   const bodyBuf=await readStreamWithLimit(res,maxBytes);
+  const isHtml=['text/html','application/xhtml+xml'].includes(contentType)||(!contentType&&Array.isArray(acceptContentTypes)&&acceptContentTypes.some(type=>['text/html','application/xhtml+xml'].includes(type)));
+  let decoded=null;
+  if(isHtml){
+   decoded=decodeHtmlBytes(bodyBuf,{contentType:res.headers.get('content-type'),maxBytes,maxDecodedBytes});
+   if(!decoded.ok){const error=new NetworkGuardError('HTML response encoding could not be decoded within the supported limits',decoded.error.toLowerCase());error.encoding=decoded.encoding??null;throw error;}
+  }
   return {
    url:rawUrl,
    finalUrl:currentUrl,
@@ -221,8 +229,9 @@ export async function safeFetchPage(rawUrl,{
    contentType,
    redirectChain,
    headers:Object.fromEntries(res.headers.entries()),
-   text:bodyBuf.toString('utf8'),
+   text:decoded?decoded.text:bodyBuf.toString('utf8'),
    byteLength:bodyBuf.length,
+   ...(decoded?{encoding:decoded.encoding}:{}),
    skippedNonHtml:false
   };
  }

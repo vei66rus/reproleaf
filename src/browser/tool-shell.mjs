@@ -31,12 +31,8 @@ export function emitToolEvent(root,detail){
 export function createToolFrame({root,title,subtitle,modeLabel,language}){
  root.classList.add('reproleaf-workbench');
  root.replaceChildren();
- const heading=el('h2',{},title);
+ const heading=el('h2',{tabIndex:-1,'data-reproleaf-title':''},title);
  const intro=el('p',{},subtitle);
- const toolbar=el('div',{className:'reproleaf-toolbar'},
-  el('h3',{tabIndex:-1,'data-reproleaf-title':''},title),
-  el('span',{className:'reproleaf-analysis-label'},modeLabel)
- );
  const form=el('form',{className:'ym-disable-submit'});
  const status=el('p',{className:'reproleaf-status',role:'status','aria-live':'polite'},
   language==='ru'?'Заполните поля и запустите проверку.':'Fill in the fields and run the check.'
@@ -54,7 +50,7 @@ export function createToolFrame({root,title,subtitle,modeLabel,language}){
   findings
  );
  const layout=el('div',{className:'reproleaf-layout'},form,aside);
- root.append(heading,intro,toolbar,layout);
+ root.append(heading,intro,layout);
  return {form,status,metrics,findingsTitle,findings,extra,aside};
 }
 

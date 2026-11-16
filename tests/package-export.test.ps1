@@ -17,7 +17,8 @@ try{
     $file=Join-Path $fixtureRoot $relative;New-Item -ItemType Directory -Path (Split-Path -Parent $file) -Force | Out-Null
     [IO.File]::WriteAllText($file,($relative -eq '.gitignore' ? ".env`nprivate/`nartifacts/`n" : 'Public test fixture.'))
   }
-  foreach($directory in @('tools','src','cases','fixtures','skills','packs','examples','tests','integrations')){New-Item -ItemType Directory -Path (Join-Path $fixtureRoot $directory) -Force | Out-Null}
+  foreach($directory in @('tools','src','cases','fixtures','skills','packs','examples','tests','integrations','badges','benchmarks')){New-Item -ItemType Directory -Path (Join-Path $fixtureRoot $directory) -Force | Out-Null}
+  foreach($relative in @('server.json','glama.json','smithery.yaml','benchmarks/pilot-dataset.json')){[IO.File]::WriteAllText((Join-Path $fixtureRoot $relative),'Public test fixture.')}
   $fixtureScript=Join-Path $fixtureRoot 'tools/package-local-preview.ps1';Copy-Item -LiteralPath $sourceScript -Destination $fixtureScript
   [IO.File]::WriteAllText((Join-Path $fixtureRoot 'src/example.mjs'),'export const fixture=true;')
   [IO.File]::WriteAllText((Join-Path $fixtureRoot '.env'),'Ignored private fixture.')

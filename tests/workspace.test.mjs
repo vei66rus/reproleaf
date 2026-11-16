@@ -48,10 +48,10 @@ test('local API shares the core and rejects foreign Origin, invalid bodies and e
   assert.equal(casesResp.total,9);
   assert.ok(Array.isArray(casesResp.unverifiedHeuristics));
   const clientsResp=await (await fetch(api.url+'/v1/clients')).json();
-  assert.equal(clientsResp.clients.some(c=>c.id==='codex'&&c.verifiedLocalStdio===true),true);
-  assert.equal(clientsResp.clients.some(c=>c.id==='claude-code'&&c.verifiedLocalStdio===true),true);
-  assert.equal(clientsResp.clients.some(c=>c.id==='gemini-cli'&&c.verifiedLocalStdio===true),true);
-  assert.equal(clientsResp.clients.some(c=>c.id==='chatgpt'&&c.verifiedLocalStdio===false),true);
+  assert.ok(clientsResp.clients.length>=7);
+  assert.ok(clientsResp.clients.every(c=>c.verifiedLocalStdio===false));
+  assert.equal(clientsResp.clients.find(c=>c.id==='codex').clientVerification,'not-tested-in-client');
+  assert.equal(clientsResp.clients.find(c=>c.id==='chatgpt').clientVerification,'manual-handoff-only');
   const diagResp=await fetch(api.url+'/v1/diagnose',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({stack:'react',category:'forms',symptom:'Duplicate async submit'})});
   assert.equal(diagResp.status,200);
   const diagJson=await diagResp.json();

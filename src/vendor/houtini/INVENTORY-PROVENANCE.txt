@@ -1,0 +1,17 @@
+Houtini SEO Audit inventory-observation adaptation
+
+Upstream: https://github.com/houtini-ai/seo-audit
+Commit: ff75890fb5c9c39f3c52f8abf99cc2b4a531740d
+Reference mechanisms: src/audit/checks.ts duplicate-title and metadata checks;
+src/audit/checks-hreflang.ts canonical-target inventory lookups.
+License: Apache License 2.0, reproduced in LICENSE.
+Applicable upstream notices: Copyright 2024 Houtini Ltd;
+Copyright (c) 2026 Richard Baxter / Houtini.
+
+Reproleaf adaptation, 2026-11-16: array records instead of the upstream SQL
+database; explicit locale partitions and unknown coverage; safe exact URL
+relationships; bounded grouped evidence; canonical declaration chains/cycles;
+manual-review observations rather than ranking or indexation claims.
+No upstream UI or automatic site-writing mechanism is included.
+
+Additional predicate adaptations, 2026-11-16: missing-title, missing-meta-description, missing-h1/multiple-h1, multiple-canonical and duplicate-meta-description from src/audit/checks.ts. These use explicitly captured optional static-HTML facts instead of SQL defaults. Omitted, ambiguous, truncated and budget-limited fields stay unknown. H1 counts and optional descriptions are advisory; upstream length targets, universal single-H1 requirements, indexability assumptions and penalty claims are not imported. Local extraction uses the existing bounded parse5 guards. Rechecks require positive same-scope supplied evidence and do not establish source authenticity or cryptographic engine-version proof.

@@ -43,7 +43,7 @@
           </div>
           <div data-packet-fields="" hidden=""><label>JSON-пакет с черновиком, утверждениями, источниками и глоссарием<textarea class="ym-disable-keys" name="packet" rows="14" maxlength="1048576" spellcheck="false"></textarea></label><p class="reproleaf-help">Формат и пример есть в архиве набора; MCP-инструмент get_workflow также возвращает схему.</p></div>
           <div data-blog-fields="" hidden="">
-            <p>Загрузите карту опубликованных страниц. Входящие считаются только внутри этой выгрузки; меню и динамические блоки могут быть не учтены.</p>
+            <p>Загрузите карту опубликованных страниц. Входящие считаются только внутри этой выгрузки; меню и динамические блоки могут быть не учтены. JSON также может содержать явные HTML-факты из экспорта сохранённого обхода; формат показан в примере. Пропущенные сведения и поля, отсутствующие в sitemap, остаются непроверенными.</p>
             <label>JSON или XML sitemap, до 5 МБ<input class="ym-disable-keys" type="file" name="blogFile" accept="application/json,application/xml,text/xml,.json,.xml"></label>
             <label>Или вставьте JSON / XML<textarea class="ym-disable-keys" name="blog" rows="14" maxlength="5242880" spellcheck="false"></textarea></label>
             <button type="button" data-load-blog-example="" class="reproleaf-text-button">Показать пример из трёх страниц</button>

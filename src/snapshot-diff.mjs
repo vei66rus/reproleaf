@@ -4,10 +4,23 @@ function findingKey(finding){
  return `${finding.code}::${finding.message}`;
 }
 
+function pageReadFailed(page){
+ return Boolean(page.readFailed||page.error||page.readError||page.fetchError||page.status===0||page.state==='failed'||page.findingKeys?.some(key=>/^(?:BATCH_)?(?:FILE_)?READ_(?:FAILED|ERROR)::/.test(key))||(page.findings||[]).some(f=>/(?:READ|FETCH)_(?:FAILED|ERROR)$/.test(f.code||'')));
+}
+
+function unconfirmedEntry(file,key,page){
+ const verificationReasons=[];
+ if(!page)verificationReasons.push('page-absent');
+ else if(pageReadFailed(page))verificationReasons.push('read-failed');
+ verificationReasons.push('engine-unknown','rule-coverage-unknown');
+ return {file,key,reason:verificationReasons[0],verificationReasons};
+}
+
 export function createBaselineSnapshot(batchReport){
  const pages=(batchReport.pages||[]).map(page=>({
   file:page.file,
   ok:Boolean(page.ok),
+  readFailed:pageReadFailed(page),
   errors:Number(page.errors||0),
   warnings:Number(page.warnings||0),
   findingKeys:[...new Set((page.findings||[]).map(findingKey))].sort()
@@ -37,6 +50,7 @@ export function diffBaselineSnapshots({baseline,current}){
 
  const regressions=[];
  const resolved=[];
+ const unconfirmed=[];
  const unchanged=[];
  const addedPages=[];
  const removedPages=[];
@@ -55,27 +69,39 @@ export function diffBaselineSnapshots({baseline,current}){
    else unchanged.push({file,key});
   }
   for(const key of baseKeys){
-   if(!currKeys.has(key))resolved.push({file,key});
+   if(!currKeys.has(key))unconfirmed.push(unconfirmedEntry(file,key,currPage));
   }
  }
 
  for(const file of baseMap.keys()){
-  if(!currMap.has(file))removedPages.push(file);
+  if(!currMap.has(file)){
+   removedPages.push(file);
+   for(const key of baseMap.get(file).findingKeys)unconfirmed.push(unconfirmedEntry(file,key,null));
+  }
  }
 
  return {
-  ok:regressions.length===0,
+  ok:false,
+  verificationComplete:false,
+  noObservedRegressions:regressions.length===0,
+  outcome:regressions.length?'regressed':'unconfirmed',
+  coverage:{state:'unknown',engine:'unknown',ruleExecution:'unknown',scope:'Supplied file and finding inventories only. Missing findings do not prove a rule ran successfully, files were read, or an issue was fixed.'},
   baselineSha256:baseSnapshot.snapshotSha256,
   currentSha256:currSnapshot.snapshotSha256,
   summary:{
    regressions:regressions.length,
    resolved:resolved.length,
+   disappeared:unconfirmed.length,
+   unconfirmed:unconfirmed.length,
    unchanged:unchanged.length,
    addedPages:addedPages.length,
    removedPages:removedPages.length
   },
   regressions,
   resolved,
+  disappeared:unconfirmed,
+  unconfirmed,
+  unchanged,
   addedPages,
   removedPages
  };

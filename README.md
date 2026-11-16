@@ -1,27 +1,96 @@
 # Reproleaf
 
-[![GEO & SEO Checked by Reproleaf](badges/geo-seo-checked.svg)](https://evolkov.tech/en/tools/geo-readiness-checker/)
-[![llms.txt Verified by Reproleaf](badges/llms-txt-verified.svg)](https://evolkov.tech/en/tools/llms-txt-studio/)
 [![M8ven Verified](https://m8ven.ai/badge/mcp/vei66rus-reproleaf-1xe04q?variant=verified&v=acdf89194153532e30d0ad18a72082a4)](https://m8ven.ai/mcp/vei66rus-reproleaf-1xe04q?s=readme)
 
 Local-first deterministic technical SEO, GEO (`llms.txt`, AI crawler access), Schema.org JSON-LD, internal PageRank, log analysis, and mobile web verification toolkit built for Node.js (>=22), CI pipelines, coding agents (MCP), Chrome, and VS Code.
 
 Online browser tools and GEO leaderboard (runs offline inside your browser tab, zero login required): [evolkov.tech/en/tools/geo-benchmark-leaderboard](https://evolkov.tech/en/tools/geo-benchmark-leaderboard).
 
-## Version 2.0.0
+## Version 2.3.1
 
-### 30-Second Quickstart
+The XML inventory panel distinguishes a missing second sitemap from an observed zero difference. Short localized status values fit the existing metric layout; JSON report contracts are unchanged.
 
-- **CLI static build audit (SARIF / JSON / CSV):** `npx --yes reproleaf batch-audit --dir dist --preset saas --format sarif --output reproleaf.sarif`
-- **Local stdio MCP (50 tools):** `npx -y reproleaf-mcp` (Node 22+, Playwright optional peer dependency)
+## Version 2.3.0
+
+Five optional supplied-HTML inventory observations now join the existing report. Repeat checks for thirteen inventory observations require positive same-scope evidence; missing captures, omitted metadata and incomplete groups remain unverified. See the saved-crawl workflow and limits below. No new public browser runner or WordPress source capture is enabled.
+
+## Version 2.2.0
+
+Finding-only `diff` and `crawl-diff` reports retain disappeared observations as `unconfirmed`, not verified fixes. Missing pages, failed reads and unknown rule coverage cannot prove a correction. These commands return `verificationComplete: false`, `ok: false` and exit code 1 while coverage remains unconfirmed. `noObservedRegressions` describes only whether the supplied observations contain a newly detected regression; it is not a successful verification result.
+
+Source release candidate: dedicated GSC, keyword cleanup, access-log, authorship, supplied-page comparison, JSON-LD, social metadata, robots, redirect and hreflang panels, plus bounded local batch HTML review. Unknown inputs remain unknown; observed signals do not establish rankings, verified crawler identity or factual authority. The hosted gateway and public releases are versioned separately.
+
+Version 2.1.0 adds byte-aware HTML imports, optional inventory metadata observations, a saved-crawl inventory export, and editable nginx/Apache redirect drafts. Private server-project MCP context now retains the scope of the WordPress integration's per-URL/rule comparison. Finding-only CLI comparisons still cannot confirm corrections. The hosted gateway remains separately deployed.
+
+### Use a saved crawl in the browser workspace
+
+Convert an existing Node crawler JSON into the inventory format accepted by the main workspace's **Site inventory** mode:
+
+```sh
+node src/cli.mjs report --file crawl.json --format inventory --output inventory.json
+```
+
+Upload `inventory.json` in that mode. Conversion sends no requests and excludes raw HTML, headers and failed-request details. Observed final URLs, links and supported metadata remain available to the local analyzer. Paths and query strings remain in the file: review them before sharing. Multiple records with the same final URL require alias review before import. Distinct URLs such as `/a` and `/a/` that collide under the existing link graph's trailing-slash normalization are rejected, not merged.
+
+Only successful HTML responses contribute title, a single supplied H1, canonical and meta robots observations. Other responses contribute their supplied HTTP status. Missing fields remain unknown; the converter does not infer article type, locale, page text, link placement or whole-site coverage. A single exported sitemap contains URLs, so it cannot supply these content observations.
+
+### Review supplied HTML metadata in the existing workspace
+
+Open the main [SEO workspace](https://evolkov.tech/en/tools/reproleaf), select **Site inventory**, and upload or paste an inventory JSON. The existing three-page example now includes synthetic HTML facts. The separate source example `examples/blog-html-metadata-facts.json` demonstrates all five additional observations: empty title, empty description, advisory H1 count, multiple canonical elements and duplicate descriptions within one locale partition.
+
+To use your own saved Node crawl, convert it with the command above. Optional facts are extracted only when a successful HTML record includes its actual `html` body. Each facts capture is bounded to 1 MiB UTF-8, 20,000 DOM nodes and depth128. Raw HTML is excluded from the resulting inventory. Missing bodies, ambiguous/oversized descriptions, capture-limit failures and HTTP204/205/206 body-derived fields remain unknown. Status is retained; these responses cannot provide positive full-document recheck evidence. Explicit application/xhtml+xml records retain supplied legacy metadata, but new DOM facts are not processed because this adapter is an HTML parser, not an XML engine. Unsupported captures cannot establish positive body-derived recheck evidence. Existing WordPress saved-crawl projections do not provide these new HTML facts; their supported canonical/status observations continue unchanged.
+
+The HTML/schema/social panels keep their existing reports; they do not automatically turn an HTML upload into an inventory. A sitemap supplies URLs rather than proof that metadata is missing. No length score, mandatory single-H1 rule, Google snippet-use claim or ranking prediction is added.
+
+Run and repeat the inventory check locally:
+
+```sh
+node src/cli.mjs blog audit --inventory inventory.json > before.json
+# Re-export after an intentional change, keeping the same page scope.
+node src/cli.mjs blog audit --inventory updated-inventory.json > after.json
+node src/cli.mjs compare --before before.json --after after.json
+```
+
+Positive rechecks are scoped to the thirteen supported inventory observations. They require explicit same-scope evidence: omitted facts, failed captures, truncated reports and unknown target directives remain unverified. Duplicate rechecks recompute values across the complete locale partition. These are comparisons of supplied observations, not proof of source authenticity or cryptographic engine-version verification. Other finding-only diff commands remain unconfirmed as described above.
+
+### Local static accessibility audit
+
+The optional local browser tool uses pinned `axe-core` 4.14.0. After `npm ci`, install the Playwright Chromium runtime if it is absent:
+
+```sh
+npx playwright install chromium
+node src/cli.mjs accessibility-audit --file page.html --allow-browser --locale en --output accessibility.json
+```
+
+Files must contain valid UTF-8 and fit 512 KiB. Unrestricted local MCP provides `audit_static_accessibility` with inline `html`, `locale` and required `allowBrowser: true`. Restricted stdio, local public HTTP and the hosted gateway do not expose this browser tool. An operator may set `REPROLEAF_BROWSER_EXECUTABLE`; callers cannot submit an executable path or a URL.
+
+This audits a transformed static DOM. Source scripts, active documents and external resources are removed or rejected; inline CSS is retained. External styling, dynamic states and manual checks remain unknown. Original-site WCAG conformance and OS network isolation are not established. A generated report, including CLI exit zero, is not a clean-audit certificate. Reports retain Reproleaf runner policy/version separately from the axe engine.
+
+The local controller accepts one browser job at a time, caps input before spawning a child, and uses a 20-second work deadline plus up to 11 seconds of owned-process cleanup and scheduling overhead. Chromium's forced-crash temporary-profile remnants are not forensically excluded. Missing runtime, invalid input and cleanup failures do not produce a successful report. See [integration limits](src/vendor/axe-core/INTEGRATION.txt).
+
+On evolkov.tech, **Review saved metadata** transfers the selected saved crawl sample into the existing workspace without another crawl. It excludes project keys, page text and the link graph. Metadata-only reports leave link/orphan/cluster counts unknown; they do not imply a whole-site audit.
+
+### Source installation
+
+Use a reviewed source checkout and Node.js 22 or later. The npm package was unavailable at the 2026-11-16 publication check; do not assume an `npx reproleaf` or `npx reproleaf-mcp` installation exists.
+
+```sh
+npm ci --omit=dev --ignore-scripts
+node src/cli.mjs help
+node src/cli.mjs batch-audit --dir /absolute/path/to/static-build --preset saas --format sarif --output reproleaf.sarif
+node src/mcp.mjs
+```
+
+The static audit reads the supplied directory. The last command starts a local stdio MCP server; configure your client to launch Node with the absolute path to `src/mcp.mjs`. Browser fixture verification requires development dependencies and Chromium; it is separate from the runtime-only installation above.
+
 - **GitHub Action v2 (PR delta table + SARIF):** copy a workflow from [examples/](examples/README.md) using `vei66rus/reproleaf/integrations/github-action@main`
 - **Chrome MV3 extension (`activeTab` only):** load [integrations/chrome-extension](integrations/chrome-extension/STORE-CHECKLIST.md) for instant HTML, JSON-LD, SERP extractor & DOM checks
 - **VS Code linter with Quick Fixes:** open [integrations/vscode](integrations/vscode/package.json) for real-time HTML, Markdown & `llms.txt` diagnostics
-- **Verified 24-origin dev-docs benchmark (`benchmarks/pilot-dataset.json`):** reproduce ethically (`<=1 req/2s` per domain) via `node src/cli.mjs benchmark --file benchmarks/origins-devdocs.txt --allow-network`
+- **Saved 24-origin pilot snapshot:** inspect `benchmarks/pilot-dataset.json`; its provenance and integrity limits are described below. It is not a representative web sample.
 
 ## Architecture & Scope
 
-The public Streamable HTTP MCP endpoint at `https://evolkov.tech/mcp/reproleaf` exposes **46** read-only supplied-data analysis tools; restricted `REPROLEAF_PUBLIC_MCP=1` stdio exposes **44** read-only tools, and full local stdio registers **50** tools. Private project data and local files never touch the public gateway. See [public gateway limits](docs/PUBLIC-GATEWAY.md) and [MCP directory manifests](docs/MCP-DIRECTORIES.md).
+The hosted Streamable HTTP MCP endpoint at `https://evolkov.tech/mcp/reproleaf` was observed as **0.8.0 with 11 tools** on 2026-11-16. This source candidate separately registers **51 local stdio tools**, **44 read-only tools** in restricted `REPROLEAF_PUBLIC_MCP=1` stdio mode, and **46 read-only tools** in its local HTTP implementation. Source capabilities are not a claim that the hosted gateway has been upgraded. Check `initialize` and `tools/list` on the transport you actually use. Public gateway tools exclude private project context and local file access, but supplied public requests still reach that server. See [public gateway limits](docs/PUBLIC-GATEWAY.md) and [MCP directory manifests](docs/MCP-DIRECTORIES.md).
 
 ## Run locally
 
@@ -73,11 +142,11 @@ Runs write `report.json` and screenshots under `artifacts/runs/<timestamp>/`. Th
 
 Chromium viewport emulation and CDP touch injection are **not physical iOS or Android results**. Scroll and focus assertions do not establish full accessibility or performance compliance.
 
-## MCP (50 local tools; 44 public stdio / 46 HTTP read-only)
+## Source MCP (51 local tools; 44 public stdio / 46 local HTTP)
 
-The local stdio server (`src/mcp.mjs`, or `npx -y reproleaf-mcp`) registers 50 tools covering technical SEO, AI search (GEO), `llms.txt` token budgeting, Answer-First structure, SERP pixel preview, SERP clustering/gap/cocoon planning, E-E-A-T, JSON-LD, OpenGraph, hreflang, and synthetic mobile web checks. Forty-nine are read-only; `update_project_task` writes an explicitly requested decision and optional note to the configured private project.
+The source stdio server (`node src/mcp.mjs`) registers 51 tools covering technical SEO, AI search (GEO), `llms.txt` token budgeting, Answer-First structure, SERP pixel preview, SERP clustering/gap/cocoon planning, E-E-A-T, JSON-LD, OpenGraph, hreflang, and synthetic mobile web checks. Fifty are read-only; `update_project_task` writes an explicitly requested decision and optional note to the configured private project.
 
-Public stdio mode (`REPROLEAF_PUBLIC_MCP=1`) exposes 44 read-only tools. Stateless JSON-RPC HTTP (`POST /v1/mcp`) exposes 46 read-only tools. The core local and editorial tools include:
+Source public stdio mode (`REPROLEAF_PUBLIC_MCP=1`) exposes 44 read-only tools. The source stateless JSON-RPC HTTP implementation (`POST /v1/mcp`) exposes 46 read-only tools. These counts do not describe the separately deployed 0.8.0/11-tool gateway. The core local and editorial tools include:
 
 - `list_cases`: search the synthetic case metadata (`query`, `category`, `limit`, `offset`).
 - `get_case`: retrieve the expected behavior, limitations and local verification command.
@@ -124,7 +193,13 @@ node src/public-evidence.mjs /absolute/path/to/run/report.json /new/review/outpu
 
 The generator verifies known input hashes and dependencies. Missing or stale evidence is labeled `not-run` or `not-current` and publishes no current outcomes. Each versioned output directory rejects changed existing files. Build to a new review directory while editing; copy a reviewed release snapshot once and use a new version for later changes. A package version change invalidates the verifier input hash and requires another run before publication.
 
-The 0.6.1 rule and evidence references above are historical, immutable artifacts. The current 0.7.1 release does not rewrite them or imply a new public evidence release. `docs/PROJECT-CONTEXT.md` explains active application selection without merging legacy and current manifests.
+The 0.6.1 rule and evidence references above are historical, immutable artifacts. This source candidate does not rewrite them or imply a new public evidence release. `docs/PROJECT-CONTEXT.md` explains active application selection without merging legacy and current manifests.
+
+### Pilot snapshot integrity
+
+`benchmarks/pilot-dataset.json` records 24 origins and a declared generation time of `2026-11-15T15:05:20.803Z`. Its embedded SHA-256 is `f872c46c32ed9547bb8375526576ba2d05558f1332c73b453b08a09f5c0b6e95`, covering `JSON.stringify({summary,results})`, not the entire file or `generatedAt`. Validation checks structure, unique origins, compatible statuses, summary counts and that digest. A matching digest establishes internal self-consistency; it does not authenticate the observations, independently verify collection or establish freshness. A producer can change observations and recompute the digest. The pilot is not a citation prediction or evidence of ranking effects.
+
+The browser leaderboard inspects the saved snapshot without reprobes. A new network benchmark is a separate explicit operation on an operator-provided origin list: `node src/cli.mjs benchmark --file /absolute/path/to/origins.txt --allow-network`. Review the collection scope and target permissions before running it; reading the bundled snapshot makes no network request.
 
 ### Saved private site crawl context (available since 0.6.1)
 

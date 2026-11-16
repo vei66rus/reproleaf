@@ -3,6 +3,7 @@ param([Parameter(Mandatory=$true)][string]$Destination,[switch]$DryRun)
 $ErrorActionPreference='Stop'
 $kitRoot=(Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
 $allowed=@('README.md','CONTRIBUTING.md','SECURITY.md','CHANGELOG.md','LICENSE','CITATION.cff','.dockerignore','deploy/public-gateway/Dockerfile','deploy/public-gateway/compose.yaml','deploy/public-gateway/launch.mjs','deploy/public-gateway/Caddyfile.example','.gitignore','.env.example','package.json','package-lock.json','docs/SITE-CONTEXT.md','docs/PROJECT-CONTEXT.md','docs/PARAGRAPH-REVIEW.md','docs/PUBLIC-GATEWAY.md','.github/workflows/ci.yml','tools/package-local-preview.ps1','src','cases','fixtures','skills','packs','examples','tests','integrations')
+$allowed+=@('server.json','glama.json','smithery.yaml','badges','benchmarks/pilot-dataset.json')
 $exportItems=$allowed | ForEach-Object { Join-Path $kitRoot $_ }
 $target=[System.IO.Path]::GetFullPath($Destination)
 if([System.IO.Path]::GetExtension($target) -ne '.zip'){throw 'ZIP destination required'}

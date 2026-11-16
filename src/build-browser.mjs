@@ -37,7 +37,8 @@ export async function buildBrowser(output=path.join(root,'dist/browser')){
  }
  await writeFile(path.join(output,'THIRD-PARTY-ICONS-LICENSE.txt'),await readFile(path.join(root,'integrations/THIRD-PARTY-ICONS-LICENSE.txt')));
  await writeFile(path.join(output,'THIRD-PARTY-ZOD-LICENSE.txt'),await readFile(path.join(root,'node_modules/zod/LICENSE')));
- const dependencyNotices=[];for(const name of ['zod','marked','parse5']){const pkg=JSON.parse(await readFile(path.join(root,'node_modules',name,'package.json'),'utf8'));dependencyNotices.push(`${name} ${pkg.version}\n\n${await readFile(path.join(root,'node_modules',name,'LICENSE'),'utf8')}`);}
+ const dependencyNotices=[];for(const name of ['zod','marked','parse5','entities']){const pkg=JSON.parse(await readFile(path.join(root,'node_modules',name,'package.json'),'utf8'));dependencyNotices.push(`${name} ${pkg.version}\n\n${await readFile(path.join(root,'node_modules',name,'LICENSE'),'utf8')}`);}
+ dependencyNotices.push(`Houtini-derived HTML decoding adapter\n\n${await readFile(path.join(root,'src/vendor/houtini/NOTICE.txt'),'utf8')}\n\n${await readFile(path.join(root,'src/vendor/houtini/LICENSE'),'utf8')}`);
  await writeFile(path.join(output,'THIRD-PARTY-DEPENDENCIES-LICENSE.txt'),dependencyNotices.join('\n\n'));
  await writeFile(path.join(output,'LICENSE'),await readFile(path.join(root,'LICENSE')));
  return manifest;

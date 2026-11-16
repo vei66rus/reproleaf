@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "siteUrl": "https://example.org",
+  "coverage": "Synthetic eight-page inventory. Status and robots values are supplied test observations, not results of a network crawl. No search-engine indexing or ranking result is claimed.",
+  "evidenceScope": "stored-links",
+  "pages": [
+    {"url":"https://example.org/a","title":"Shared guide","h1":"Shared heading","locale":"en","kind":"other","metadata":{"canonical":"/b","httpStatus":200,"robotsMeta":"index","source":"supplied"},"links":[{"href":"/b"}]},
+    {"url":"https://example.org/b","title":"Shared guide","h1":"Shared heading","locale":"en","kind":"other","metadata":{"canonical":"/c","httpStatus":404,"robotsMeta":"none","source":"supplied"},"links":[{"href":"/c"}]},
+    {"url":"https://example.org/c","title":"Third page","locale":"en","kind":"other","metadata":{"canonical":"/a","httpStatus":200,"robotsMeta":"","source":"supplied"},"links":[{"href":"/d"}]},
+    {"url":"https://example.org/d","title":"Chain start","locale":"en","kind":"other","metadata":{"canonical":"/e","source":"supplied"},"links":[{"href":"/e"}]},
+    {"url":"https://example.org/e","title":"Chain middle","locale":"en","kind":"other","metadata":{"canonical":"/f","httpStatus":200,"robotsMeta":"","source":"supplied"},"links":[{"href":"/f"}]},
+    {"url":"https://example.org/f","title":"Self canonical","locale":"en","kind":"other","metadata":{"canonical":"/f","httpStatus":200,"robotsMeta":"","source":"supplied"},"links":[{"href":"/g"}]},
+    {"url":"https://example.org/g","title":"Missing inventory target","locale":"en","kind":"other","metadata":{"canonical":"/outside","source":"supplied"},"links":[{"href":"/h"}]},
+    {"url":"https://example.org/h","title":"Unsupported canonical value","locale":"en","kind":"other","metadata":{"canonical":"javascript:alert(1)","source":"supplied"},"links":[{"href":"/a"}]}
+  ]
+}

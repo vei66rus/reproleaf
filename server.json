@@ -6,12 +6,12 @@
     "url": "https://github.com/vei66rus/reproleaf",
     "source": "github"
   },
-  "version": "2.0.0",
+  "version": "2.3.1",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "reproleaf",
-      "version": "2.0.0",
+      "version": "2.3.1",
       "transport": {
         "type": "stdio"
       }

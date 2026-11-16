@@ -14,17 +14,17 @@ import {auditLlmsBudget} from '../src/llms-budget-audit.mjs';
 import {auditEditorialClarity} from '../src/editorial-clarity-audit.mjs';
 import {auditAnswerFirst} from '../src/answer-first-audit.mjs';
 
-test('Sprint 96 dogfooding: WordPress tools-llms.txt and docs/articles pass offline audits',async()=>{
- const llmsPath=path.resolve(root,'../portfolio/wordpress/seo/tools-llms.txt');
+test('bundled documentation fixtures pass offline audits without an owner sibling project',async()=>{
+ const llmsPath=path.join(root,'fixtures/content/tools-llms.txt');
  const llmsText=await readFile(llmsPath,'utf8');
  const txtRes=auditLlmsTxt({content:llmsText});
  assert.equal(txtRes.ok,true);
  const budgetRes=auditLlmsBudget({llmsTxt:llmsText});
  assert.equal(budgetRes.ok,true);
 
- const articlesDir=path.join(root,'docs/articles');
+ const articlesDir=path.join(root,'fixtures/content');
  const mdFiles=(await readdir(articlesDir)).filter(f=>f.endsWith('.md')).sort();
- assert.equal(mdFiles.length>=4,true);
+ assert.equal(mdFiles.length>=1,true);
  for(const file of mdFiles){
   const body=(await readFile(path.join(articlesDir,file),'utf8')).replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/,'');
   const locale=file.endsWith('-ru.md')?'ru':'en';
@@ -97,17 +97,24 @@ test('Sprint 97 stress test: 5000 nodes + 15000 edges compute PageRank and persi
  assert.equal(redirectAudit.summary.loops>=1,true);
 });
 
-test('Sprint 99-100 release 2.0.0 alignment across manifests, SARIF, browser dist and README',async()=>{
- assert.equal(version,'2.0.0');
+test('release metadata agrees across source, lockfile, MCP, SARIF, bundled workspace and README',async()=>{
+ assert.match(version,/^\d+\.\d+\.\d+$/);
  const pkg=JSON.parse(await readFile(path.join(root,'package.json'),'utf8'));
  const srv=JSON.parse(await readFile(path.join(root,'server.json'),'utf8'));
- const browserManifest=JSON.parse(await readFile(path.join(root,'dist/browser/manifest.json'),'utf8'));
+ const browserManifest=JSON.parse(await readFile(path.join(root,'integrations/wordpress/reproleaf/workspace/manifest.json'),'utf8'));
+ const citation=await readFile(path.join(root,'CITATION.cff'),'utf8');
  const readme=await readFile(path.join(root,'README.md'),'utf8');
 
- assert.equal(pkg.version,'2.0.0');
- assert.equal(srv.version,'2.0.0');
- assert.equal(srv.packages[0].version,'2.0.0');
- assert.equal(browserManifest.version,'2.0.0');
- assert.equal(toSarifReport({pages:[]}).runs[0].tool.driver.version,'2.0.0');
- assert.match(readme,/^## Version 2\.0\.0/m);
+ const lock=JSON.parse(await readFile(path.join(root,'package-lock.json'),'utf8'));
+ assert.equal(pkg.version,version);
+ assert.equal(lock.version,version);
+ assert.equal(lock.packages[''].version,version);
+ assert.deepEqual(lock.packages[''].dependencies,pkg.dependencies);
+ assert.deepEqual(lock.packages[''].peerDependencies,pkg.peerDependencies);
+ assert.equal(srv.version,version);
+ assert.equal(srv.packages[0].version,version);
+ assert.equal(browserManifest.version,version);
+ assert(citation.split(/\r?\n/).includes('version: '+version));
+ assert.equal(toSarifReport({pages:[]}).runs[0].tool.driver.version,version);
+ assert(readme.split(/\r?\n/).includes('## Version '+version));
 });

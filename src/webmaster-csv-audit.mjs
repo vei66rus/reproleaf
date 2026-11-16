@@ -6,89 +6,71 @@ export const webmasterCsvSchema=z.object({
  minImpressions:z.number().int().min(1).max(1000000).default(50)
 }).strict();
 
-function detectDelimiter(headerLine){
- const counts={',':0,';':0,'\t':0};
- let inQuotes=false;
- for(const ch of headerLine){
-  if(ch==='"')inQuotes=!inQuotes;
-  else if(!inQuotes&&Object.hasOwn(counts,ch))counts[ch]+=1;
+export const WEBMASTER_CSV_LIMITS=Object.freeze({bytes:10485760,rows:50000});
+const aliases={query:['query','queries','top queries','keyword','поисковый запрос','запрос'],page:['page','top pages','landing page','url','страница','адрес страницы'],clicks:['clicks','клики'],impressions:['impressions','shows','показы'],position:['position','average position','avg position','позиция','средняя позиция'],ctr:['ctr']};
+const error=(code)=>{throw new Error(code);};
+const byteLength=text=>new TextEncoder().encode(text).length;
+export function parseStrictGscCsv(text,limits=WEBMASTER_CSV_LIMITS){
+ if(typeof text!=='string'||byteLength(text)>limits.bytes)error('GSC_FILE_LIMIT');
+ text=text.replace(/^\uFEFF/,'').replace(/\r\n?/g,'\n');
+ if(!text.trim())error('GSC_EMPTY');
+ let first='',quoted=false;
+ for(let i=0;i<text.length;i++){const c=text[i];if(c==='"'){if(quoted&&text[i+1]==='"'){first+='""';i++;continue;}quoted=!quoted;}if(c==='\n'&&!quoted)break;first+=c;}
+ const counts={',':0,';':0,'\t':0};quoted=false;
+ for(let i=0;i<first.length;i++){if(first[i]==='"'){if(quoted&&first[i+1]==='"'){i++;continue;}quoted=!quoted;}else if(!quoted&&Object.hasOwn(counts,first[i]))counts[first[i]]++;}
+ const delimiter=Object.keys(counts).sort((a,b)=>counts[b]-counts[a])[0];
+ const rows=[];let row=[],field='',state='start';
+ const finishField=()=>{row.push(field);field='';state='start';};
+ const finishRow=()=>{finishField();if(row.some(v=>v.trim()))rows.push(row);row=[];if(rows.length>limits.rows+1)error('GSC_ROW_LIMIT');};
+ for(let i=0;i<text.length;i++){
+  const c=text[i];
+  if(c==='\0')error('GSC_CSV_INVALID');
+  if(state==='quoted'){if(c==='"'){if(text[i+1]==='"'){field+='"';i++;}else state='closed';}else field+=c;continue;}
+  if(c===delimiter){finishField();continue;}
+  if(c==='\n'){finishRow();continue;}
+  if(state==='closed'){if(c===' '||c==='\t')continue;error('GSC_CSV_INVALID');}
+  if(c==='"'){if(state!=='start')error('GSC_CSV_INVALID');state='quoted';continue;}
+  field+=c;state='plain';
  }
- return Object.entries(counts).sort((a,b)=>b[1]-a[1])[0][0]||',';
-}
-
-export function parseCsvRecords(rawText){
- const text=String(rawText||'').replace(/^\uFEFF/,'').replace(/\r\n/g,'\n').trim();
- if(!text)return [];
- const firstBreak=text.indexOf('\n');
- const firstLine=firstBreak===-1?text:text.slice(0,firstBreak);
- const delimiter=detectDelimiter(firstLine);
-
- const rows=[];
- let row=[];
- let field='';
- let inQuotes=false;
-
- for(let i=0;i<text.length;i+=1){
-  const ch=text[i];
-  if(inQuotes){
-   if(ch==='"'){
-    if(text[i+1]==='"'){field+='"';i+=1;}
-    else inQuotes=false;
-   }else{
-    field+=ch;
-   }
-   continue;
+ if(state==='quoted')error('GSC_CSV_INVALID');
+ if(field||row.length||state==='closed')finishRow();
+ if(rows.length<2)error('GSC_EMPTY');
+ const headers=rows.shift().map(v=>v.trim().toLowerCase());
+ if(headers.some(v=>!v)||new Set(headers).size!==headers.length)error('GSC_HEADERS');
+ const columns={};
+ for(const [key,names] of Object.entries(aliases)){const found=headers.map((v,i)=>names.includes(v)?i:-1).filter(i=>i>=0);if(found.length>1)error('GSC_HEADERS');if(found.length)columns[key]=found[0];}
+ if((columns.query===undefined&&columns.page===undefined)||['clicks','impressions','position'].some(k=>columns[k]===undefined))error('GSC_HEADERS');
+ const parseNumeric=(value,kind)=>{
+  let raw=value.trim();
+  if(!raw)error('GSC_NUMBERS');
+  if(kind==='ctr'&&raw.endsWith('%'))raw=raw.slice(0,-1).trim();
+  if(/[\s\u00A0\u202F]/u.test(raw)){
+   if(kind!=='count'||!/^\d{1,3}(?:[ \u00A0\u202F]\d{3})+(?:[,.]0+)?$/u.test(raw))error('GSC_NUMBERS');
+   raw=raw.replace(/[ \u00A0\u202F]/gu,'');
   }
-  if(ch==='"'){
-   inQuotes=true;
-  }else if(ch===delimiter){
-   row.push(field.trim());
-   field='';
-  }else if(ch==='\n'){
-   row.push(field.trim());
-   if(row.some(cell=>cell!==''))rows.push(row);
-   row=[];
-   field='';
-  }else{
-   field+=ch;
-  }
- }
- row.push(field.trim());
- if(row.some(cell=>cell!==''))rows.push(row);
- if(rows.length<2)return [];
-
- const headers=rows[0].map(h=>h.trim());
- return rows.slice(1).map(vals=>{
-  const obj={};
-  for(let idx=0;idx<headers.length;idx+=1){
-   obj[headers[idx]]=vals[idx]??'';
-  }
-  return obj;
+  if(kind==='count'&&/^[1-9]\d{0,2}(?:[,\.]\d{3})+$/.test(raw))raw=raw.replace(/[,\.]/g,'');
+  else raw=raw.replace(',','.');
+  if(!/^\d+(?:\.\d+)?$/.test(raw))error('GSC_NUMBERS');
+  const number=Number(raw);
+  if(!Number.isFinite(number)||number>Number.MAX_SAFE_INTEGER||(kind==='count'&&!Number.isSafeInteger(number)))error('GSC_NUMBERS');
+  return number;
+ };
+ const normalized=rows.map(cells=>{
+  if(cells.length!==headers.length)error('GSC_CSV_INVALID');
+  const get=k=>columns[k]===undefined?'':cells[columns[k]].trim();
+  const query=get('query'),page=get('page');
+  if(!query&&!page)error('GSC_IDENTITY');
+  if(query.length>1000||page.length>4096)error('GSC_CELL_LIMIT');
+  if(page){let u;try{u=new URL(page);}catch{error('GSC_PAGE_URL');}if(!['http:','https:'].includes(u.protocol)||u.username||u.password)error('GSC_PAGE_URL');}
+  const clicks=parseNumeric(get('clicks'),'count'),impressions=parseNumeric(get('impressions'),'count'),position=parseNumeric(get('position'),'position');
+  if(clicks>impressions||position>1000||(impressions>0&&position===0))error('GSC_NUMBERS');
+  if(columns.ctr!==undefined&&get('ctr')&&parseNumeric(get('ctr'),'ctr')>100)error('GSC_NUMBERS');
+  return {query,page,clicks,impressions,position,ctr:impressions?clicks/impressions:0};
  });
+ return {rows:normalized,hasQuery:columns.query!==undefined,hasPage:columns.page!==undefined};
 }
 
-function parseNumber(raw){
- if(raw===undefined||raw===null||raw==='')return 0;
- const s=String(raw).trim().replace(/\s+/g,'').replace(/%/g,'').replace(',','.');
- const n=Number(s);
- return Number.isFinite(n)?n:0;
-}
-
-function parseCtr(raw){
- const str=String(raw||'').trim();
- const n=parseNumber(str);
- if(str.includes('%')||n>1)return Number((n/100).toFixed(4));
- return Number(n.toFixed(4));
-}
-
-function pickField(row,candidates){
- const entries=Object.entries(row);
- for(const cand of candidates){
-  const match=entries.find(([k])=>k.toLowerCase()===cand);
-  if(match)return match[1];
- }
- return undefined;
-}
+export function parseCsvRecords(rawText){return parseStrictGscCsv(rawText).rows;}
 
 function expectedCtrForPosition(pos){
  if(pos<=1.5)return 0.22;
@@ -101,22 +83,12 @@ function expectedCtrForPosition(pos){
 
 export function auditWebmasterCsv(rawInput){
  const input=webmasterCsvSchema.parse(rawInput);
- const rawRows=parseCsvRecords(input.csvText);
- if(rawRows.length===0){
-  throw Error('CSV contains no data rows.');
- }
-
- const normalized=[];
- for(const row of rawRows){
-  const query=pickField(row,['top queries','query','queries','поисковый запрос','запрос','keyword'])||'';
-  const page=pickField(row,['page','top pages','landing page','url','страница','адрес страницы'])||'';
-  const clicks=parseNumber(pickField(row,['clicks','клики']));
-  const impressions=parseNumber(pickField(row,['impressions','показы','shows']));
-  const rawCtr=pickField(row,['ctr']);
-  const ctr=rawCtr!==undefined?parseCtr(rawCtr):(impressions>0?Number((clicks/impressions).toFixed(4)):0);
-  const position=parseNumber(pickField(row,['position','average position','avg position','позиция','средняя позиция']));
-  if(!query&&!page)continue;
-  normalized.push({query,page,clicks,impressions,ctr,position});
+ const source=parseStrictGscCsv(input.csvText);
+ const normalized=source.rows;
+ let totalClicks=0,totalImpressions=0;
+ for(const row of normalized){
+  totalClicks+=row.clicks;totalImpressions+=row.impressions;
+  if(!Number.isSafeInteger(totalClicks)||!Number.isSafeInteger(totalImpressions))error('GSC_NUMBERS');
  }
 
  const quickWins=[];
@@ -166,14 +138,15 @@ export function auditWebmasterCsv(rawInput){
 
  return {
   ok:cannibalizationConflicts.length===0,
+  scope:{hasQuery:source.hasQuery,hasPage:source.hasPage,overlapStatus:source.hasQuery&&source.hasPage?"observed-candidates":"not-checked",ctrModel:"Illustrative fixed curve, not a traffic forecast",categoryLimit:100,source:input.source},
   summary:{
    rowCount:normalized.length,
    minImpressions:input.minImpressions,
    quickWinCount:quickWins.length,
    lowCtrCount:lowCtrOpportunities.length,
    cannibalizationCount:cannibalizationConflicts.length,
-   totalClicks:normalized.reduce((s,r)=>s+r.clicks,0),
-   totalImpressions:normalized.reduce((s,r)=>s+r.impressions,0)
+   totalClicks,
+   totalImpressions
   },
   quickWins:quickWins.slice(0,100),
   lowCtrOpportunities:lowCtrOpportunities.slice(0,100),

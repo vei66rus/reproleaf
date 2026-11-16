@@ -2,7 +2,7 @@ import {parse} from 'parse5';
 import {z} from 'zod';
 
 const pageProfileSchema=z.object({
- url:z.string().min(1).max(2048).default('https://example.com/'),
+ url:z.string().url().max(2048).refine(value=>{const url=new URL(value);return ['http:','https:'].includes(url.protocol)&&!url.username&&!url.password;},'Use a public HTTP(S) page label without credentials').optional(),
  position:z.number().int().min(1).max(100).optional(),
  html:z.string().min(1).max(1048576).optional(),
  title:z.string().max(400).optional(),
@@ -35,24 +35,33 @@ function getAttr(node,name){
 }
 
 function collectVisibleText(node,skipTags=new Set(['script','style','noscript','template','svg'])){
- if(!node)return '';
- if(node.nodeName==='#text')return node.value||'';
- if(skipTags.has(node.tagName))return '';
- return (node.childNodes||[]).map(c=>collectVisibleText(c,skipTags)).join(' ');
+ const parts=[],stack=node?[node]:[];let visited=0;
+ while(stack.length){
+  const current=stack.pop();if(++visited>100000)throw Error('HTML exceeds the 100000-node analysis limit');
+  if(skipTags.has(current.tagName)||isExplicitlyHidden(current))continue;
+  if(current.nodeName==='#text')parts.push(current.value||'');
+  else stack.push(...(current.childNodes||[]).slice().reverse());
+ }
+ return parts.join(' ');
 }
 
 function walkNodes(node,visitor){
- visitor(node);
- for(const child of node.childNodes||[])walkNodes(child,visitor);
+ const stack=[node];let visited=0;
+ while(stack.length){const current=stack.pop();if(++visited>100000)throw Error('HTML exceeds the 100000-node analysis limit');if(isExplicitlyHidden(current))continue;visitor(current);stack.push(...(current.childNodes||[]).slice().reverse());}
 }
+
+function isExplicitlyHidden(node){return (node.attrs||[]).some(a=>a.name==='hidden'||(a.name==='aria-hidden'&&a.value.trim().toLowerCase()==='true'))||/(?:^|;)\s*(?:display\s*:\s*none|visibility\s*:\s*hidden)\b/i.test(getAttr(node,'style'));}
+function exportUrl(value){if(!value)return null;const url=new URL(value);url.search='';url.hash='';return url.href;}
 
 function collectJsonLdTypes(rawJson,typesSet){
  try{
   const parsed=JSON.parse(rawJson);
   const stack=Array.isArray(parsed)?[...parsed]:[parsed];
+  const seen=new Set();
   while(stack.length>0){
    const item=stack.pop();
    if(!item||typeof item!=='object')continue;
+   if(seen.has(item))continue;seen.add(item);if(seen.size>100000)throw Error('JSON-LD exceeds analysis limits');
    if(Array.isArray(item['@graph']))stack.push(...item['@graph']);
    const t=item['@type'];
    if(typeof t==='string'&&t.trim())typesSet.add(t.trim());
@@ -78,16 +87,16 @@ function extractProfile(input){
  if(!input.html){
   const termSet=new Set((input.terms||[]).map(t=>t.toLowerCase().trim()).filter(Boolean));
   return {
-   url:input.url,
+   url:exportUrl(input.url),
    position:input.position??null,
    title:input.title||'',
-   wordCount:input.wordCount??0,
-   headings:input.headings||[],
-   schemaTypes:input.schemaTypes||[],
-   hasTable:Boolean(input.hasTable),
-   hasFaq:Boolean(input.hasFaq),
-   hasPricing:Boolean(input.hasPricing),
-   termSet
+   wordCount:input.wordCount??null,
+   headings:input.headings??null,
+   schemaTypes:input.schemaTypes??null,
+   hasTable:input.hasTable??null,
+   hasFaq:input.hasFaq??null,
+   hasPricing:input.hasPricing??null,
+   termSet:input.terms?termSet:null
   };
  }
 
@@ -127,7 +136,7 @@ function extractProfile(input){
  const hasPricing=input.hasPricing??(schemaSet.has('Offer')||schemaSet.has('Product')||pricingPattern.test(bodyText));
 
  return {
-  url:input.url,
+  url:exportUrl(input.url),
   position:input.position??null,
   title,
   wordCount:input.wordCount??words.length,
@@ -141,7 +150,7 @@ function extractProfile(input){
 }
 
 function median(values){
- if(values.length===0)return 0;
+ if(values.length===0)return null;
  const sorted=[...values].sort((a,b)=>a-b);
  const mid=Math.floor(sorted.length/2);
  return sorted.length%2===0?Math.round((sorted[mid-1]+sorted[mid])/2):sorted[mid];
@@ -153,13 +162,15 @@ export function analyzeSerpGap(rawInput){
  const target=parsed.target?extractProfile(parsed.target):null;
  const n=competitors.length;
 
- const wordCounts=competitors.map(c=>c.wordCount);
- const minWords=Math.min(...wordCounts);
- const maxWords=Math.max(...wordCounts);
+ const seenUrls=new Set();
+ for(const input of parsed.competitors){if(!input.url)continue;const identity=new URL(input.url);identity.hash='';if(seenUrls.has(identity.href))throw Error('Duplicate competitor page URL');seenUrls.add(identity.href);}
+ const wordCounts=competitors.map(c=>c.wordCount).filter(value=>value!==null);
+ const minWords=wordCounts.length?Math.min(...wordCounts):null;
+ const maxWords=wordCounts.length?Math.max(...wordCounts):null;
  const medianWords=median(wordCounts);
- const targetWords=Math.max(medianWords,Math.round(medianWords*1.1));
+ const targetWords=null;
 
- const h2Counts=competitors.map(c=>c.headings.filter(h=>h.level===2).length);
+ const h2Counts=competitors.filter(c=>c.headings!==null).map(c=>c.headings.filter(h=>h.level===2).length);
  const medianH2=median(h2Counts);
 
  const termCoverage=new Map();
@@ -173,23 +184,21 @@ export function analyzeSerpGap(rawInput){
   if(comp.hasTable)tableAdopt+=1;
   if(comp.hasFaq)faqAdopt+=1;
   if(comp.hasPricing)pricingAdopt+=1;
-  for(const term of comp.termSet)termCoverage.set(term,(termCoverage.get(term)||0)+1);
-  for(const st of comp.schemaTypes)schemaCoverage.set(st,(schemaCoverage.get(st)||0)+1);
-  for(const h of comp.headings.filter(x=>x.level===2||x.level===3)){
-   const norm=h.text.toLowerCase().trim();
-   headingPatternFreq.set(norm,(headingPatternFreq.get(norm)||0)+1);
-  }
+  for(const term of comp.termSet||[])termCoverage.set(term,(termCoverage.get(term)||0)+1);
+  for(const st of new Set(comp.schemaTypes||[]))schemaCoverage.set(st,(schemaCoverage.get(st)||0)+1);
+  for(const norm of new Set((comp.headings||[]).filter(x=>x.level===2||x.level===3).map(h=>h.text.toLowerCase().trim()).filter(Boolean)))headingPatternFreq.set(norm,(headingPatternFreq.get(norm)||0)+1);
  }
 
- const minShared=n>=3?Math.max(2,Math.ceil(n*0.4)):1;
+ const observed={wordCount:wordCounts.length,headings:h2Counts.length,schemaTypes:competitors.filter(c=>c.schemaTypes!==null).length,terms:competitors.filter(c=>c.termSet!==null).length,table:competitors.filter(c=>c.hasTable!==null).length,faq:competitors.filter(c=>c.hasFaq!==null).length,pricing:competitors.filter(c=>c.hasPricing!==null).length};
+ const sharedThreshold=total=>total>=3?Math.max(2,Math.ceil(total*0.4)):1;
  const topSharedTerms=[...termCoverage.entries()]
-  .filter(([,cnt])=>cnt>=minShared)
+  .filter(([,cnt])=>cnt>=sharedThreshold(observed.terms))
   .sort((a,b)=>b[1]-a[1])
   .slice(0,parsed.topTermsLimit)
-  .map(([term,competitorCount])=>({term,competitorCount,coverageRatio:Number((competitorCount/n).toFixed(2))}));
+  .map(([term,competitorCount])=>({term,competitorCount,observedCompetitorCount:observed.terms,coverageRatio:Number((competitorCount/observed.terms).toFixed(4))}));
 
  const recommendedSchemaTypes=[...schemaCoverage.entries()]
-  .filter(([,cnt])=>cnt>=minShared)
+  .filter(([,cnt])=>cnt>=sharedThreshold(observed.schemaTypes))
   .sort((a,b)=>b[1]-a[1])
   .map(([type,competitorCount])=>({type,competitorCount}));
 
@@ -198,93 +207,103 @@ export function analyzeSerpGap(rawInput){
   .slice(0,12)
   .map(([heading,competitorCount])=>({heading,competitorCount}));
 
- const tableRatio=Number((tableAdopt/n).toFixed(2));
- const faqRatio=Number((faqAdopt/n).toFixed(2));
- const pricingRatio=Number((pricingAdopt/n).toFixed(2));
+ const ratio=(count,total)=>total?Number((count/total).toFixed(4)):null;
+ const tableRatio=ratio(tableAdopt,observed.table);
+ const faqRatio=ratio(faqAdopt,observed.faq);
+ const pricingRatio=ratio(pricingAdopt,observed.pricing);
 
  const findings=[];
  const missingTerms=[];
  const missingSchemaTypes=[];
 
  if(target){
-  if(target.wordCount<Math.round(medianWords*0.75)){
+  if(target.wordCount!==null&&medianWords!==null&&target.wordCount<Math.round(medianWords*0.75)){
    findings.push({
     code:'GAP_THIN_WORD_COUNT',
     severity:'warning',
     targetWordCount:target.wordCount,
     medianCompetitorWords:medianWords,
-    recommendedWords:targetWords,
-    message:`Target word count (${target.wordCount}) is significantly below Top competitor median (${medianWords}).`,
-    recommendation:`Expand depth cleanly toward ${medianWords}-${targetWords} words with factual sections instead of filler.`
+    comparisonOnly:true,
+    message:`Supplied target word count (${target.wordCount}) is below the supplied-page median (${medianWords}).`,
+    recommendation:'Review whether the reader task is answered. Length alone is not an error or a requirement to add words.'
    });
   }
-  const targetH2=target.headings.filter(h=>h.level===2).length;
-  if(medianH2>=3&&targetH2<Math.max(2,Math.floor(medianH2*0.6))){
+  const targetH2=target.headings===null?null:target.headings.filter(h=>h.level===2).length;
+  if(targetH2!==null&&medianH2!==null&&medianH2>=3&&targetH2<Math.max(2,Math.floor(medianH2*0.6))){
    findings.push({
     code:'GAP_HEADING_SKELETON_THIN',
     severity:'warning',
     targetH2Count:targetH2,
     medianCompetitorH2:medianH2,
-    message:`Target page has ${targetH2} H2 sections while competitors average ${medianH2} H2 blocks.`,
-    recommendation:'Structure content into scannable H2 sections answering core subtopics.'
+    comparisonOnly:true,
+    message:`Supplied target has ${targetH2} H2 sections; the supplied-page median is ${medianH2}.`,
+    recommendation:'Review task coverage and reading order; do not copy the number of headings as a quota.'
    });
   }
-  if(tableRatio>=0.5&&!target.hasTable){
+  if(tableRatio!==null&&tableRatio>=0.5&&target.hasTable===false){
    findings.push({
     code:'GAP_MISSING_TABLE',
     severity:'warning',
     competitorAdoption:tableRatio,
-    message:`${Math.round(tableRatio*100)}% of competitors include a comparison/spec table, missing on target page.`,
-    recommendation:'Add a structured HTML <table> summarizing key options, limits, or metrics.'
+    comparisonOnly:true,
+    message:`${tableAdopt}/${observed.table} supplied pages with known table observations contain a table; the target does not.`,
+    recommendation:'Consider a table only when it makes the actual comparison easier to use.'
    });
   }
-  if(faqRatio>=0.5&&!target.hasFaq){
+  if(faqRatio!==null&&faqRatio>=0.5&&target.hasFaq===false){
    findings.push({
     code:'GAP_MISSING_FAQ',
     severity:'warning',
     competitorAdoption:faqRatio,
-    message:`${Math.round(faqRatio*100)}% of competitors include an FAQ block, missing on target page.`,
-    recommendation:'Add concise Answer-First FAQ items matching real user questions.'
+    comparisonOnly:true,
+    message:`${faqAdopt}/${observed.faq} supplied pages with known observations have FAQ-like markup; the target does not.`,
+    recommendation:'Check whether real remaining questions need answers; an FAQ block is not required.'
    });
   }
-  if(pricingRatio>=0.5&&!target.hasPricing){
+  if(pricingRatio!==null&&pricingRatio>=0.5&&target.hasPricing===false){
    findings.push({
     code:'GAP_MISSING_PRICING',
     severity:'info',
     competitorAdoption:pricingRatio,
-    message:`${Math.round(pricingRatio*100)}% of ranking pages explicitly mention pricing or plans.`,
+    comparisonOnly:true,
+    message:`${pricingAdopt}/${observed.pricing} supplied pages with known observations have price-like text or markup.`,
     recommendation:'Disclose transparent pricing, free tier limits, or exact cost model if commercial.'
    });
   }
-  const targetSchemaSet=new Set(target.schemaTypes);
+  const targetSchemaSet=target.schemaTypes===null?null:new Set(target.schemaTypes);
   for(const rec of recommendedSchemaTypes){
-   if(!targetSchemaSet.has(rec.type))missingSchemaTypes.push(rec.type);
+   if(targetSchemaSet&&!targetSchemaSet.has(rec.type))missingSchemaTypes.push(rec.type);
   }
   if(missingSchemaTypes.length>0){
    findings.push({
     code:'GAP_MISSING_SCHEMA_TYPES',
     severity:'warning',
     missingSchemaTypes,
-    message:`Missing Schema.org types common in SERP Top-10: ${missingSchemaTypes.join(', ')}.`,
-    recommendation:`Evaluate adding valid JSON-LD for: ${missingSchemaTypes.join(', ')}.`
+    comparisonOnly:true,
+    message:`Schema.org types observed on supplied pages but not in target markup: ${missingSchemaTypes.join(', ')}.`,
+    recommendation:'Use a type only if it describes the actual visible content. Other pages using it does not establish eligibility.'
    });
   }
   for(const st of topSharedTerms){
-   if(!target.termSet.has(st.term))missingTerms.push(st.term);
+   if(target.termSet&&!target.termSet.has(st.term))missingTerms.push(st.term);
   }
   if(missingTerms.length>0){
    findings.push({
     code:'GAP_MISSING_TERMS',
     severity:missingTerms.length>=5?'warning':'info',
     missingTerms:missingTerms.slice(0,15),
-    message:`Target is missing ${missingTerms.length} recurring SERP terms (${missingTerms.slice(0,8).join(', ')}).`,
-    recommendation:'Cover missing domain concepts naturally in dedicated subheadings or examples.'
+    comparisonOnly:true,
+    message:`${missingTerms.length} observed terms are absent from the supplied target (${missingTerms.slice(0,8).join(', ')}).`,
+    recommendation:'Review meaning and task relevance before adding anything; lexical absence does not prove a content gap.'
    });
   }
  }
 
  return {
   ok:findings.every(f=>f.severity!=='error'),
+  kind:'supplied-page-comparison',
+  coverage:{suppliedCompetitors:n,observed,searchResultsFetched:false,rankingVerified:false,renderedVisibilityVerified:false,urlsInReport:'query-and-fragment-removed'},
+  limits:['Compares supplied profiles or static HTML only; no URLs are fetched.','Unknown observations remain null and are excluded from metric denominators.','No ranking, word-count quota, fact verification or mandatory FAQ/schema recommendation.','HTML hidden attributes and inline hiding are excluded; external CSS and JavaScript visibility are not executed.'],
   benchmarks:{
    competitorCount:n,
    words:{min:minWords,median:medianWords,max:maxWords,target:targetWords},
@@ -295,9 +314,10 @@ export function analyzeSerpGap(rawInput){
    topSharedTerms
   },
   targetComparison:target?{
+   sourceIndex:0,
    url:target.url,
    wordCount:target.wordCount,
-   h2Count:target.headings.filter(h=>h.level===2).length,
+   h2Count:target.headings===null?null:target.headings.filter(h=>h.level===2).length,
    hasTable:target.hasTable,
    hasFaq:target.hasFaq,
    hasPricing:target.hasPricing,
@@ -305,11 +325,12 @@ export function analyzeSerpGap(rawInput){
    missingSchemaTypes,
    missingTerms:missingTerms.slice(0,20)
   }:null,
-  competitors:competitors.map(c=>({
+  competitors:competitors.map((c,index)=>({
+   sourceIndex:index+1,
    url:c.url,
    position:c.position,
    wordCount:c.wordCount,
-   h2Count:c.headings.filter(h=>h.level===2).length,
+   h2Count:c.headings===null?null:c.headings.filter(h=>h.level===2).length,
    hasTable:c.hasTable,
    hasFaq:c.hasFaq,
    hasPricing:c.hasPricing,

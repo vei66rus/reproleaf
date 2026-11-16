@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "siteUrl": "https://example.org/",
+  "evidenceScope": "metadata-only",
+  "coverage": "Synthetic supplied HTML-facts example only. No site was requested and no indexation or ranking was measured.",
+  "pages": [
+    {
+      "url": "https://example.org/blank",
+      "title": "",
+      "kind": "other",
+      "locale": "en",
+      "links": [],
+      "metadata": {
+        "source": "supplied",
+        "canonical": null,
+        "htmlFacts": {"status": "observed", "titlePresent": false, "description": "", "h1Count": 0, "canonicalCount": 2}
+      }
+    },
+    {
+      "url": "https://example.org/guide-a",
+      "title": "Guide A",
+      "h1": "First guide",
+      "kind": "other",
+      "locale": "en",
+      "links": [],
+      "metadata": {
+        "source": "supplied",
+        "canonical": "https://example.org/guide-a",
+        "htmlFacts": {"status": "observed", "titlePresent": true, "description": "Shared description for editorial review.", "h1Count": 1, "canonicalCount": 1}
+      }
+    },
+    {
+      "url": "https://example.org/guide-b",
+      "title": "Guide B",
+      "h1": "Second guide",
+      "kind": "other",
+      "locale": "en",
+      "links": [],
+      "metadata": {
+        "source": "supplied",
+        "canonical": "https://example.org/guide-b",
+        "htmlFacts": {"status": "observed", "titlePresent": true, "description": "Shared description for editorial review.", "h1Count": 1, "canonicalCount": 1}
+      }
+    }
+  ]
+}

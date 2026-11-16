@@ -1,9 +1,10 @@
 import {parse} from 'parse5';
 import {z} from 'zod';
+import {MARKUP_CORE_LIMITS,assertMarkupSourceBudget,assertMarkupTreeBudget,assertJsonSourceBudget,isSchemaOrgContext,isIsoCalendarDate,isWebUrl} from './markup-input-guards.mjs';
 
 export const schemaAuditSchema=z.object({
  html:z.string().min(1).max(1048576),
- url:z.string().url().max(2048).optional()
+ url:z.string().url().max(2048).refine(isWebUrl,'Expected an HTTP(S) page URL without credentials').optional()
 }).strict();
 
 const articleTypes=new Set(['Article','BlogPosting','NewsArticle','TechArticle']);
@@ -48,8 +49,7 @@ function hasNonEmptyValue(val){
 }
 
 function isIsoDateLike(val){
- if(typeof val!=='string')return false;
- return /^\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?)?$/.test(val.trim());
+ return isIsoCalendarDate(val);
 }
 
 function collectIdReferences(value,refs){
@@ -75,7 +75,9 @@ function checkRelativeUrls(entity,blockIndex,typeLabel,findings){
   const values=typeof val==='string'?[val]:Array.isArray(val)?val.filter(v=>typeof v==='string'):[];
   for(const candidate of values){
    const trimmed=candidate.trim();
-   if(trimmed&&!trimmed.startsWith('http://')&&!trimmed.startsWith('https://')&&!trimmed.startsWith('#')){
+   if(trimmed&&(/^(?:https?:|javascript:|data:|file:)/i.test(trimmed))&&!isWebUrl(trimmed)){
+    findings.push({code:'SCHEMA_INVALID_WEB_URL',severity:'error',blockIndex,type:typeLabel,message:`Field "${field}" contains an invalid or unsafe web URL.`,recommendation:'Use a valid absolute HTTP(S) URL without credentials for this web-page profile.'});
+   }else if(trimmed&&!isWebUrl(trimmed)&&!trimmed.startsWith('#')){
     findings.push({
      code:'SCHEMA_RELATIVE_URL',
      severity:'warning',
@@ -106,8 +108,7 @@ function flattenBlockEntities(parsed,blockIndex,findings){
    continue;
   }
   const effectiveContext=item['@context']??rootContext;
-  const ctxText=typeof effectiveContext==='string'?effectiveContext:JSON.stringify(effectiveContext||'');
-  if(!ctxText.toLowerCase().includes('schema.org')){
+  if(!isSchemaOrgContext(effectiveContext)){
    findings.push({
     code:'SCHEMA_CONTEXT_UNUSUAL',
     severity:'warning',
@@ -130,11 +131,11 @@ function validateTypedEntity(entity,blockIndex,types,findings){
    if(!hasNonEmptyValue(entity[req])){
     findings.push({
      code:'SCHEMA_ARTICLE_MISSING_FIELD',
-     severity:'error',
+     severity:'warning',
      blockIndex,
      type:primaryType,
-     message:`${primaryType} is missing required field "${req}".`,
-     recommendation:`Add a valid "${req}" property to ${primaryType}.`
+     message:`${primaryType} does not include "${req}" under this local article profile.`,
+     recommendation:`Review whether "${req}" describes the visible page. This is a local profile check, not a universal Schema.org requirement.`
     });
    }
   }
@@ -249,9 +250,12 @@ function validateTypedEntity(entity,blockIndex,types,findings){
 
 export function auditJsonLd(rawInput){
  const parsed=schemaAuditSchema.parse(rawInput);
+ assertMarkupSourceBudget(parsed.html);
  const doc=parse(parsed.html);
+ assertMarkupTreeBudget(doc);
  const rawBlocks=[];
  collectJsonLdScripts(doc,rawBlocks);
+ if(rawBlocks.length>MARKUP_CORE_LIMITS.blocks)throw new Error('MARKUP_COMPLEX');
  const findings=[];
  const entities=[];
  const blockSummaries=[];
@@ -278,16 +282,18 @@ export function auditJsonLd(rawInput){
    blockSummaries.push({blockIndex,validJson:false,entityCount:0});
    continue;
   }
+  assertJsonSourceBudget(rawText);
   let json;
   try{
    json=JSON.parse(rawText);
   }catch(error){
+   const position=/\bposition\s+(\d+)/i.exec(error.message||'')?.[1];
    findings.push({
     code:'SCHEMA_INVALID_JSON',
     severity:'error',
     blockIndex,
     type:null,
-    message:`JSON-LD block ${blockIndex} failed to parse: ${error.message}`,
+    message:`JSON-LD block ${blockIndex} is not valid JSON${position?` at position ${position}`:''}.`,
     recommendation:'Fix JSON syntax errors inside the <script type="application/ld+json"> block.'
    });
    blockSummaries.push({blockIndex,validJson:false,entityCount:0});
@@ -362,6 +368,7 @@ export function auditJsonLd(rawInput){
   },
   blocks:blockSummaries,
   findings,
-  limits:['Inspects static <script type="application/ld+json"> tags in supplied HTML without executing JavaScript or fetching remote @id URLs.']
+  profile:'Reproleaf local structural checks; not complete Schema.org validation or Google rich-result eligibility',
+  limits:['Inspects static <script type="application/ld+json"> tags in supplied HTML without executing JavaScript or fetching remote @id URLs.','Only selected local type/field rules are evaluated. Missing article fields are review warnings, not universal Schema.org requirements.','Input is bounded by bytes, DOM depth/node count, JSON nesting/token count and script-block count.']
  };
 }

@@ -6,7 +6,7 @@ export const eeatAuditSchema=z.object({
  url:z.string().url().max(2048).optional()
 }).strict();
 
-const authorLinkPattern=/(?:^|\/)(?:author|authors|team|editor|about|автор|команда|о-нас|о-проекте)(?:\/|$)/i;
+const authorLinkPattern=/(?:^|\/)(?:author|authors|editor|автор)(?:\/|$)/i;
 const trustLinkPattern=/(?:^|\/)(?:about|contact|editorial|methodology|privacy|terms|disclaimer|контакты|о-нас|редакция|методика|политика)(?:\/|$)/i;
 
 function getAttr(node,name){
@@ -15,29 +15,76 @@ function getAttr(node,name){
 }
 
 function collectText(node,skipTags=new Set(['script','style','noscript','template'])){
- if(!node)return '';
- if(node.nodeName==='#text')return node.value||'';
- if(skipTags.has(node.tagName))return '';
- return (node.childNodes||[]).map(c=>collectText(c,skipTags)).join(' ');
+ const parts=[],stack=[{node,depth:0}];let visited=0;
+ while(stack.length){
+  const {node:current,depth}=stack.pop();if(!current)continue;
+  if(++visited>30000||depth>256)throw Error('HTML structure exceeds the review limits (30000 nodes, depth 256).');
+  if(isHidden(current)||skipTags.has(current.tagName))continue;
+  if(current.nodeName==='#text'){parts.push(current.value||'');continue;}
+  const children=current.childNodes||[];
+  for(let index=children.length-1;index>=0;index--)stack.push({node:children[index],depth:depth+1});
+ }
+ return parts.join(' ');
 }
 
 function walkNodes(node,visitor){
- visitor(node);
- for(const child of node.childNodes||[])walkNodes(child,visitor);
+ const stack=[{node,depth:0}];let visited=0;
+ while(stack.length){
+  const {node:current,depth}=stack.pop();
+  if(++visited>30000||depth>256)throw Error('HTML structure exceeds the review limits (30000 nodes, depth 256).');
+  if(isHidden(current))continue;
+  visitor(current);
+  const children=current.childNodes||[];
+  for(let index=children.length-1;index>=0;index--)stack.push({node:children[index],depth:depth+1});
+ }
 }
 
 function walkJsonObjects(value,visitor){
- if(!value||typeof value!=='object')return;
- if(Array.isArray(value)){
-  for(const item of value)walkJsonObjects(item,visitor);
-  return;
+ const stack=[{value,depth:0}];let visited=0;
+ while(stack.length){
+  const current=stack.pop();if(!current.value||typeof current.value!=='object')continue;
+  if(++visited>10000||current.depth>128)throw Error('JSON-LD structure exceeds the review limits.');
+  if(!Array.isArray(current.value))visitor(current.value);
+  for(const item of Object.values(current.value))stack.push({value:item,depth:current.depth+1});
  }
- visitor(value);
- for(const v of Object.values(value))walkJsonObjects(v,visitor);
 }
 
 function hasText(v){
  return typeof v==='string'&&v.trim().length>0;
+}
+
+function isIsoDate(value){
+ if(typeof value!=='string')return false;
+ const match=value.trim().match(/^(\d{4})-(\d{2})-(\d{2})(?:T(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d{1,9})?)?(?:Z|[+-](?:0\d|1[0-4]):[0-5]\d)?)?$/);
+ if(!match)return false;
+ const year=Number(match[1]),month=Number(match[2]),day=Number(match[3]);
+ if(month<1||month>12||day<1||day>new Date(Date.UTC(year,month,0)).getUTCDate())return false;
+ return Number.isFinite(Date.parse(value));
+}
+
+function isHidden(node){
+ if(['template','noscript'].includes(node?.tagName))return true;
+ if((node?.attrs||[]).some(a=>a.name==='hidden'||a.name==='inert'))return true;
+ if(getAttr(node,'aria-hidden').trim().toLowerCase()==='true')return true;
+ if(/(?:^|;)\s*(?:display\s*:\s*none|visibility\s*:\s*(?:hidden|collapse)|content-visibility\s*:\s*hidden)\s*(?:!important)?\s*(?:;|$)/i.test(getAttr(node,'style')))return true;
+ return false;
+}
+
+function safeReference(raw,base){
+ try{
+  const url=new URL(raw,base||'https://reproleaf.invalid');
+  if(!['http:','https:'].includes(url.protocol))return null;
+  url.username='';url.password='';url.search='';url.hash='';
+  let pathname=url.pathname;
+  try{pathname=decodeURIComponent(pathname);}catch{}
+  let next=false;
+  url.pathname=pathname.split(/[?#]/)[0].split('/').map(segment=>{
+   const hide=next||/@/.test(segment)||/^(?:\d{1,3}\.){3}\d{1,3}$/.test(segment)||/^[a-f\d-]{24,}$/i.test(segment)||segment.length>80;
+   next=/^(?:token|secret|password|api[-_]?key|session|access[-_]?token)$/i.test(segment);
+   return hide?'[redacted]':segment.replace(/[\u0000-\u001f\u007f]/g,'');
+  }).join('/');
+  return /^https?:\/\//i.test(raw)?url.href:url.pathname;
+ }catch{return null;}
 }
 
 export function auditEeatSignals(rawInput){
@@ -52,6 +99,7 @@ export function auditEeatSignals(rawInput){
  const timeDatetimes=[];
  const trustLinks=[];
  const primaryExternalSources=[];
+ const absoluteHttpLinks=[];
  const schemaSignals={
   hasPerson:false,
   hasOrganization:false,
@@ -66,19 +114,20 @@ export function auditEeatSignals(rawInput){
  walkNodes(doc,node=>{
   const tag=node.tagName;
   if(!tag)return;
+  if(isHidden(node))return;
 
   if(tag==='meta'){
    const name=(getAttr(node,'name')||getAttr(node,'property')||'').toLowerCase().trim();
    const content=getAttr(node,'content').trim();
    if(!content)return;
    if(name==='author')metaAuthor=content;
-   if(name==='article:published_time'||name==='datepublished')metaPublished=content;
-   if(name==='article:modified_time'||name==='last-modified'||name==='datemodified')metaModified=content;
+   if((name==='article:published_time'||name==='datepublished')&&isIsoDate(content))metaPublished=content;
+   if((name==='article:modified_time'||name==='last-modified'||name==='datemodified')&&isIsoDate(content))metaModified=content;
   }
 
   if(tag==='time'){
    const dt=getAttr(node,'datetime').trim()||collectText(node).trim();
-   if(dt)timeDatetimes.push(dt);
+   if(isIsoDate(dt))timeDatetimes.push(dt);
   }
 
   if(tag==='a'){
@@ -86,17 +135,17 @@ export function auditEeatSignals(rawInput){
    const rel=(getAttr(node,'rel')||'').toLowerCase();
    const text=collectText(node).replace(/\s+/g,' ').trim();
    if(rel.split(/\s+/).includes('author')||authorLinkPattern.test(href)){
-    authorElements.push(text||href);
+    if(text)authorElements.push(text);
    }
    if(trustLinkPattern.test(href)){
-    trustLinks.push({href,text:text||href});
+    const safe=safeReference(href,parsed.url);if(safe)trustLinks.push({href:safe,text:text||safe});
    }
-   if(/^https?:\/\//i.test(href)){
+   if(/^https?:\/\//i.test(href)||href.startsWith('//')){
     try{
-     const linkUrl=new URL(href);
-     if(!baseOrigin||linkUrl.origin!==baseOrigin){
-      primaryExternalSources.push(linkUrl.href);
-     }
+     const linkUrl=new URL(href,parsed.url||'https://reproleaf.invalid');
+     const safe=safeReference(linkUrl.href,parsed.url);
+     if(safe)absoluteHttpLinks.push(safe);
+     if(safe&&baseOrigin&&linkUrl.origin!==baseOrigin)primaryExternalSources.push(safe);
     }catch{}
    }
   }
@@ -125,8 +174,8 @@ export function auditEeatSignals(rawInput){
       }
       if(obj.author)schemaSignals.hasAuthorProp=true;
       if(obj.reviewedBy)schemaSignals.hasReviewedBy=true;
-      if(hasText(obj.datePublished))schemaSignals.hasDatePublished=true;
-      if(hasText(obj.dateModified))schemaSignals.hasDateModified=true;
+      if(isIsoDate(obj.datePublished))schemaSignals.hasDatePublished=true;
+      if(isIsoDate(obj.dateModified))schemaSignals.hasDateModified=true;
       if(Array.isArray(obj.sameAs)?obj.sameAs.length>0:hasText(obj.sameAs))schemaSignals.hasSameAs=true;
       if(obj.author&&typeof obj.author==='object'&&!Array.isArray(obj.author)){
        const at=obj.author['@type'];
@@ -142,7 +191,7 @@ export function auditEeatSignals(rawInput){
   }
  });
 
- const hasVisibleAuthor=Boolean(metaAuthor||authorElements.length>0);
+ const hasVisibleAuthor=authorElements.length>0;
  const hasDateSignal=Boolean(metaPublished||metaModified||timeDatetimes.length>0||schemaSignals.hasDatePublished||schemaSignals.hasDateModified);
  const uniqueExternalSources=[...new Set(primaryExternalSources)];
  const uniqueTrustLinks=[...new Map(trustLinks.map(l=>[l.href,l])).values()];
@@ -152,18 +201,18 @@ export function auditEeatSignals(rawInput){
   findings.push({
    code:'EEAT_MISSING_VISIBLE_AUTHOR',
    severity:'warning',
-   message:'No visible author byline, rel="author" link, or meta author found.',
+   message:'No recognizable author byline or author link outside explicitly hidden HTML was found. Meta author alone is not a visible byline.',
    recommendation:'Display a real named author/reviewer byline linked to an author profile page.'
   });
  }
- if(!schemaSignals.hasPerson||!schemaSignals.hasOrganization){
+ if(!schemaSignals.hasPerson&&!schemaSignals.hasOrganization){
   findings.push({
    code:'EEAT_INCOMPLETE_ENTITY_SCHEMA',
    severity:'warning',
    hasPerson:schemaSignals.hasPerson,
    hasOrganization:schemaSignals.hasOrganization,
-   message:`Entity JSON-LD incomplete (Person=${schemaSignals.hasPerson}, Organization=${schemaSignals.hasOrganization}).`,
-   recommendation:'Include both Person (with sameAs/jobTitle) and Organization (with logo/sameAs) in JSON-LD.'
+   message:'No Person or Organization entity was observed in supplied JSON-LD.',
+   recommendation:'If relevant to this page, describe its real author or publisher using the appropriate entity type. Both types are not universally required.'
   });
  }
  if(!hasDateSignal){
@@ -174,12 +223,14 @@ export function auditEeatSignals(rawInput){
    recommendation:'Expose visible <time datetime="..."> and datePublished/dateModified in JSON-LD.'
   });
  }
- if(uniqueExternalSources.length===0){
+ if(!baseOrigin){
+  findings.push({code:'EEAT_EXTERNAL_LINK_SCOPE_UNKNOWN',severity:'info',message:'A page URL was not supplied, so external-vs-internal link classification was not checked.'});
+ }else if(uniqueExternalSources.length===0){
   findings.push({
-   code:'EEAT_NO_PRIMARY_SOURCES',
+   code:'EEAT_NO_EXTERNAL_LINKS',
    severity:'info',
-   message:'No external primary-source citations detected on the page.',
-   recommendation:'Cite authoritative standards, documentation, or reproducible datasets where claims appear.'
+   message:'No external HTTP(S) links were observed. Link destinations were not checked for quality or primary-source status.',
+   recommendation:'Where a claim needs support, cite a relevant source and verify that it supports the claim. A link alone does not prove this.'
   });
  }
  if(uniqueTrustLinks.length===0){
@@ -193,7 +244,7 @@ export function auditEeatSignals(rawInput){
 
  const checks=[
   hasVisibleAuthor,
-  schemaSignals.hasPerson&&schemaSignals.hasOrganization,
+  schemaSignals.hasPerson||schemaSignals.hasOrganization,
   hasDateSignal,
   uniqueExternalSources.length>0,
   uniqueTrustLinks.length>0,
@@ -207,6 +258,8 @@ export function auditEeatSignals(rawInput){
   ok:findings.every(f=>f.severity!=='error')&&score>=50,
   score,
   rating,
+  scope:{kind:'raw-html-technical-observations',computedVisibilityChecked:false,authorIdentityVerified:false,pageOriginKnown:Boolean(baseOrigin),externalDestinationsFetched:false,primarySourceStatusVerified:false,rankingOrCitationPrediction:false},
+  legacyMetrics:{score:'Deprecated: proportion of six detectable technical signals, not Google E-E-A-T or trust.',rating:'Deprecated descriptive bucket for signal coverage; not factual quality or ranking.'},
   signals:{
    author:{visible:hasVisibleAuthor,metaAuthor:metaAuthor||null,mentions:authorElements.slice(0,5)},
    dates:{published:metaPublished||null,modified:metaModified||null,timeTags:timeDatetimes.slice(0,5)},
@@ -220,8 +273,9 @@ export function auditEeatSignals(rawInput){
     hasDatePublished:schemaSignals.hasDatePublished,
     hasDateModified:schemaSignals.hasDateModified
    },
-   externalPrimarySourcesCount:uniqueExternalSources.length,
-   externalPrimarySources:uniqueExternalSources.slice(0,15),
+   externalLinksCount:baseOrigin?uniqueExternalSources.length:null,
+   externalLinks:uniqueExternalSources.slice(0,15),
+   absoluteHttpLinks:[...new Set(absoluteHttpLinks)].slice(0,15),
    trustLinks:uniqueTrustLinks.slice(0,10)
   },
   findings

@@ -313,6 +313,7 @@ export async function crawlSite(rawInput,{fetchImpl=fetch,lookupAll,waitImpl=ms=
     ttfbMs:res.ttfbMs,
     contentType:res.contentType,
     byteLength:res.byteLength||0,
+    encoding:res.encoding??null,
     redirectChain:res.redirectChain,
     xRobotsTag:res.headers['x-robots-tag']||'',
     cacheControl:res.headers['cache-control']||'',

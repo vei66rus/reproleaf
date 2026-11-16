@@ -21,6 +21,10 @@ test('server.json, glama.json, smithery.yaml and package.json stay aligned for M
  assert.ok(server.remotes?.[0]?.url?.startsWith('https://'));
 
  assert.ok(Array.isArray(glama.maintainers)&&glama.maintainers.includes('vei66rus'));
- assert.ok(smithery.includes('reproleaf-mcp'));
- assert.ok(smithery.includes('stdio'));
+ assert.match(smithery,/type: stdio/);
+ assert.match(smithery,/required: \[serverPath\]/);
+ assert.match(smithery,/command: 'node'/);
+ assert.match(smithery,/args: \[config\.serverPath\]/);
+ assert.match(smithery,/serverPath: \/absolute\/path\/to\/reproleaf\/src\/mcp\.mjs/);
+ assert.doesNotMatch(smithery,/npx|reproleaf-mcp/);
 });

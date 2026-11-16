@@ -63,7 +63,9 @@ export const clientSetups=[
   name:'OpenAI Codex CLI',
   icon:'codex',
   connectionKind:'stdio-mcp',
-  verifiedLocalStdio:true,
+  verifiedLocalStdio:false,
+  clientVerification:'not-tested-in-client',
+  transportNote:'Local node stdio configuration; replace the absolute path and verify discovery and a useful tool call in your client.',
   configLocation:'~/.codex/config.toml',
   configSnippet:'[mcp_servers.reproleaf]\ncommand = "node"\nargs = ["/absolute/path/to/reproleaf/src/mcp.mjs"]',
   setupSteps:[
@@ -80,7 +82,9 @@ export const clientSetups=[
   name:'Claude Code',
   icon:'claude',
   connectionKind:'stdio-mcp',
-  verifiedLocalStdio:true,
+  verifiedLocalStdio:false,
+  clientVerification:'not-tested-in-client',
+  transportNote:'Local node stdio configuration; replace the absolute path and verify discovery and a useful tool call in your client.',
   configLocation:'.mcp.json or claude mcp add',
   configSnippet:'claude mcp add reproleaf -- node /absolute/path/to/reproleaf/src/mcp.mjs',
   setupSteps:[
@@ -88,7 +92,7 @@ export const clientSetups=[
    'Register the stdio server via claude mcp add reproleaf -- node /absolute/path/to/reproleaf/src/mcp.mjs.',
    'Run claude mcp list to confirm reproleaf is connected.'
   ],
-  verifyConnection:'claude mcp get reproleaf',
+  verifyConnection:'Inspect claude mcp get reproleaf, then call list_workflows in the client and confirm a structured JSON response. Configuration discovery alone does not verify a useful call.',
   firstUsefulPrompt:'Use reproleaf diagnose_project for an Astro islands disclosure button that resets aria-expanded on hydration, and prepare an adapter check.',
   honestyNote:'Uses local stdio MCP registration; no external cloud token is required.'
  },
@@ -97,7 +101,9 @@ export const clientSetups=[
   name:'Gemini CLI',
   icon:'gemini',
   connectionKind:'stdio-mcp',
-  verifiedLocalStdio:true,
+  verifiedLocalStdio:false,
+  clientVerification:'not-tested-in-client',
+  transportNote:'Local node stdio configuration; replace the absolute path and verify discovery and a useful tool call in your client.',
   configLocation:'~/.gemini/settings.json',
   configSnippet:'{\n  "mcpServers": {\n    "reproleaf": {\n      "command": "node",\n      "args": ["/absolute/path/to/reproleaf/src/mcp.mjs"]\n    }\n  }\n}',
   setupSteps:[
@@ -105,7 +111,7 @@ export const clientSetups=[
    'Add the reproleaf entry under mcpServers in ~/.gemini/settings.json.',
    'Launch Gemini CLI and run /mcp to inspect the registered tool set and its write boundaries.'
   ],
-  verifyConnection:'In Gemini CLI, execute /mcp. Default local stdio registers 33 tools, including the explicit update_project_task mutation; REPROLEAF_PUBLIC_MCP=1 registers 27 read-only tools. The separate HTTP gateway lists 29 read-only tools.',
+  verifyConnection:'In Gemini CLI, execute /mcp and inspect the discovered tools (MCP tools/list). Call list_workflows and confirm structured JSON. Default local stdio includes explicit private project tools; REPROLEAF_PUBLIC_MCP=1 omits them. Hosted HTTP is a separate deployment; inspect its tools/list instead of assuming local inventory parity.',
   firstUsefulPrompt:'Call review_editorial_packet or diagnose_project to inspect headings, internal links, or mobile UI preconditions.',
   honestyNote:'The stdio process runs locally. Private project tools contact only the operator-configured endpoint when invoked; public mode omits those tools.'
  },
@@ -115,6 +121,8 @@ export const clientSetups=[
   icon:'chatgpt',
   connectionKind:'prompt-handoff',
   verifiedLocalStdio:false,
+  clientVerification:'manual-handoff-only',
+  transportNote:'Clipboard report handoff; no MCP connection is established by these steps.',
   configLocation:'Manual browser prompt handoff',
   configSnippet:'Copy the structured report prompt in the Reproleaf web workspace and paste it into ChatGPT. A remote MCP URL alone does not install a ChatGPT web integration; supported app/plugin setup is separate.',
   setupSteps:[
@@ -132,6 +140,8 @@ export const clientSetups=[
   icon:'grok',
   connectionKind:'prompt-handoff',
   verifiedLocalStdio:false,
+  clientVerification:'manual-handoff-only',
+  transportNote:'Clipboard report handoff; no MCP connection is established by these steps.',
   configLocation:'Manual clipboard handoff from Reproleaf report',
   configSnippet:'Copy the Reproleaf JSON report or AI handoff prompt and paste it into your Grok conversation.',
   setupSteps:[
@@ -148,33 +158,37 @@ export const clientSetups=[
   name:'Cursor',
   icon:'cursor',
   connectionKind:'stdio-mcp',
-  verifiedLocalStdio:true,
+  verifiedLocalStdio:false,
+  clientVerification:'not-tested-in-client',
+  transportNote:'Local node stdio configuration; replace the absolute path and verify discovery and a useful tool call in your client.',
   configLocation:'~/.cursor/mcp.json',
-  configSnippet:'{\n  "mcpServers": {\n    "reproleaf": {\n      "command": "npx",\n      "args": ["-y", "reproleaf", "mcp"]\n    }\n  }\n}',
+  configSnippet:'{\n  "mcpServers": {\n    "reproleaf": {\n      "command": "node",\n      "args": ["/absolute/path/to/reproleaf/src/mcp.mjs"]\n    }\n  }\n}',
   setupSteps:[
+   'Unpack the Reproleaf kit, run npm ci --ignore-scripts, and replace the absolute path in the node configuration.',
    'Open Cursor Settings -> MCP and add the reproleaf entry to ~/.cursor/mcp.json.',
-   'Or point directly to node /absolute/path/to/reproleaf/src/mcp.mjs for a local checkout.',
-   'Reload MCP servers and verify 33 local tools (or 29 via https://evolkov.tech/mcp/reproleaf).'
+   'Reload MCP servers and inspect the discovered tools (MCP tools/list). Hosted HTTP has a separate inventory.'
   ],
-  verifyConnection:'Check the green dot next to reproleaf in Cursor MCP settings.',
+  verifyConnection:'Inspect the discovered tools, then call list_workflows and confirm structured JSON. A connection indicator alone does not verify a useful call.',
   firstUsefulPrompt:'Run audit_html_document and audit_jsonld_schema on the active HTML page.',
-  honestyNote:'Supports both local stdio and Streamable HTTP remote endpoint.'
+  honestyNote:'This recipe uses the unpacked local kit, not an assumed npm publication. Actual Cursor application integration has not been verified.'
  },
  {
   id:'windsurf',
-  name:'Windsurf / Antigravity',
+  name:'Windsurf',
   icon:'windsurf',
-  connectionKind:'stdio-mcp',
-  verifiedLocalStdio:true,
+  connectionKind:'streamable-http-mcp',
+  verifiedLocalStdio:false,
+  clientVerification:'not-tested-in-client',
+  transportNote:'Remote Streamable HTTP example; supplied tool arguments are sent to the hosted server. No local stdio process is configured here.',
   configLocation:'~/.codeium/windsurf/mcp_config.json',
   configSnippet:'{\n  "mcpServers": {\n    "reproleaf": {\n      "serverUrl": "https://evolkov.tech/mcp/reproleaf"\n    }\n  }\n}',
   setupSteps:[
-   'Add the remote Streamable HTTP serverUrl or local stdio command to mcp_config.json.',
+   'Add the remote Streamable HTTP serverUrl to mcp_config.json and check that your client version supports this configuration.',
    'Refresh MCP servers in the IDE.',
    'Use read-only SEO/GEO audit tools directly in chat.'
   ],
-  verifyConnection:'Confirm reproleaf tools appear in the MCP tool list.',
+  verifyConnection:'Inspect the remote tools/list inventory, then call list_workflows and confirm structured JSON. Actual Windsurf application integration has not been verified.',
   firstUsefulPrompt:'Call audit_ai_crawler_access with my robots.txt and homepage HTML.',
-  honestyNote:'Remote Streamable HTTP exposes 29 read-only tools with zero local filesystem access.'
+  honestyNote:'Hosted HTTP is a separate deployment with its own tool inventory. Review tools/list and supplied arguments before calling tools; it does not provide local filesystem access.'
  }
 ];

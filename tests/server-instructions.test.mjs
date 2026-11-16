@@ -32,6 +32,6 @@ for(const publicMode of [true,false])test(`official stdio initializer receives a
  const client=new Client({name:'instructions-stdio-test',version:'1.0'}),transport=new StdioClientTransport({command:process.execPath,args:[path.join(root,'src/mcp.mjs')],cwd:root,env:{PATH:process.env.PATH,REPROLEAF_PUBLIC_MCP:publicMode?'1':'0'},stderr:'pipe'});
  try{
   await client.connect(transport);const instructions=client.getInstructions(),tools=(await client.listTools()).tools;assert.equal(instructions,getServerInstructions({publicMode}));
-  if(publicMode){assert.equal(tools.length,44);assertPublic(instructions,tools);}else{assertWorkflow(instructions);assert.equal(tools.length,50);assert.ok(instructions.includes('allowlisted fixture/evidence reads'));assert.ok(instructions.includes('configured private-project tools'));assert.ok(instructions.includes('task decisions require explicit request'));assert.ok(tools.some(tool=>tool.name==='update_project_task'&&tool.annotations.readOnlyHint===false));}
+  if(publicMode){assert.equal(tools.length,44);assertPublic(instructions,tools);}else{assertWorkflow(instructions);assert.equal(tools.length,51);assert.ok(instructions.includes('allowlisted fixture/evidence reads'));assert.ok(instructions.includes('configured private-project tools'));assert.ok(instructions.includes('task decisions require explicit request'));assert.ok(tools.some(tool=>tool.name==='update_project_task'&&tool.annotations.readOnlyHint===false));}
  }finally{await client.close();}
 });

@@ -8,10 +8,12 @@ export function exportReportCsv({report,kind='findings',projectName='reproleaf',
  if(!report||typeof report!=='object')throw Error('Report object is required for CSV export');
  if(!['findings','pages','headings'].includes(kind))throw Error('Invalid CSV export kind');
  const exportedAt=new Date().toISOString();
+ const inventoryMetadata=Boolean(report.inventoryObservations);
+ const inventoryHtmlFacts=Boolean(report.inventoryObservations?.coverage?.htmlFactsProvidedPages);
  let columns;
  let rows;
  if(kind==='findings'){
-  columns=['project','origin','exported_at','report_kind','code','severity','record','observation','why','suggestion','verify_hint','message'];
+  columns=['project','origin','exported_at','report_kind','code','severity','record','observation','why','suggestion','verify_hint','message',...(inventoryMetadata?['related_records','affected_count']:[])];
   rows=(report.findings||[]).map(f=>[
    projectName,
    origin,
@@ -24,10 +26,11 @@ export function exportReportCsv({report,kind='findings',projectName='reproleaf',
    f.why||'',
    f.suggestion||'',
    f.verifyHint||'',
-   f.message||''
+   f.message||'',
+   ...(inventoryMetadata?[f.relatedRecords||'',f.affectedCount??'']:[])
   ]);
  }else if(kind==='pages'){
-  columns=['project','origin','exported_at','url','title','incoming_pages','outgoing_internal_targets','cluster'];
+  columns=['project','origin','exported_at','url','title','incoming_pages','outgoing_internal_targets','cluster',...(inventoryMetadata?['issue_codes','metadata_source_url','canonical_state','canonical_url','observed_http_status','observed_meta_noindex','metadata_observed_at']:[]),...(inventoryHtmlFacts?['html_facts_status','html_facts_unknown_reason','observed_title_present','observed_description','observed_h1_count','observed_canonical_count']:[])];
   rows=(report.pages||[]).map(p=>[
    projectName,
    origin,
@@ -36,7 +39,15 @@ export function exportReportCsv({report,kind='findings',projectName='reproleaf',
    p.title||'',
    p.incomingPages??'',
    p.outgoingInternalTargets??'',
-   p.cluster||''
+   p.cluster||'',
+   ...(inventoryMetadata?[p.issueCodes||'',
+   p.metadataObservations?.sourceUrl??'',
+   p.metadataObservations?.canonicalState??'',
+   p.metadataObservations?.canonicalUrl??'',
+   p.metadataObservations?.httpStatus??'',
+   p.metadataObservations?.robotsNoindex??'',
+   p.metadataObservations?.observedAt??'']:[]),
+   ...(inventoryHtmlFacts?[p.metadataObservations?.htmlFacts?.status??'not-provided',p.metadataObservations?.htmlFacts?.reason??'',p.metadataObservations?.htmlFacts?.titlePresent??'',p.metadataObservations?.htmlFacts?.description??'',p.metadataObservations?.htmlFacts?.h1Count??'',p.metadataObservations?.htmlFacts?.canonicalCount??'']:[])
   ]);
  }else{
   columns=['project','origin','exported_at','url','level','text','ordinal'];

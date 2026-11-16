@@ -102,6 +102,6 @@ test('benchmark-leaderboard browser module registers and filters verified datase
  assert.equal(filterBenchmarkRows(sample,'schema','').length,1);
  const csv=formatBenchmarkCsv(sample);
  assert.match(csv,/nextjs\.org/);
- assert.match(csv,/100,true,200/);
+ assert.match(csv,/"100","true","200"/);
  assert.match(csv,/"'=cmd\|calc"/);
 });

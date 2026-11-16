@@ -38,13 +38,17 @@ export function renderDashboard(host,report,language='en'){
   auditBar.append(barHead,track);
   host.append(auditBar);
  }else if(report.summary){
-  const pagesCount=report.summary.pages||0,urlsOnly=report.scope?.evidenceScope==='urls-only'||report.summary.noObservedIncoming===null;
+  const pagesCount=report.summary.pages||0,urlsOnly=report.scope?.evidenceScope==='urls-only',metadataOnly=report.scope?.evidenceScope==='metadata-only',linksUnknown=report.scope?.linkObservationCoverage?.internalComplete===false||report.summary.noObservedIncoming===null;
   const barHead=element('div',undefined,'reproleaf-audit-head');
   if(urlsOnly){
    barHead.append(
     element('strong',ru?`Импортированы только URL: ${pagesCount} адресов`:`Imported URLs only: ${pagesCount} addresses`),
-    element('span',ru?'Гиперссылки и входящие связи из XML не проверяются':'Hyperlinks and incoming links are not evaluated from XML','reproleaf-audit-sub')
+    element('span',ru?'Переданы URL, без наблюдений гиперссылок и входящих связей':'Page URLs were supplied without hyperlink or incoming-link observations','reproleaf-audit-sub')
    );
+  }else if(metadataOnly){
+   barHead.append(element('strong',ru?`Метаданные переданных страниц: ${pagesCount}`:`Supplied page metadata: ${pagesCount} pages`),element('span',ru?'Граф ссылок и входящие связи не проверялись.':'The link graph and incoming links were not evaluated.','reproleaf-audit-sub'));
+  }else if(linksUnknown){
+   barHead.append(element('strong',ru?`Данные о внутренних ссылках неполны: ${pagesCount} страниц`:`Internal-link evidence is incomplete: ${pagesCount} pages`),element('span',ru?'Пропущенные массивы не считаются пустыми. Итоги и рекомендации остаются неизвестными.':'Missing arrays are not empty observations. Totals and recommendations remain unknown.','reproleaf-audit-sub'));
   }else{
    const linked=(report.pages||[]).filter(p=>(p.incomingPages||0)>0).length;
    barHead.append(
@@ -56,7 +60,8 @@ export function renderDashboard(host,report,language='en'){
   host.append(auditBar);
  }
  const metrics=element('div',undefined,'reproleaf-metrics');
- const values=d?[[ru?'Слов':'Words',d.metrics.words],[ru?'Заголовков':'Headings',d.metrics.headings],[ru?'Ссылок':'Links',d.metrics.links],[ru?'Изображений':'Images',d.metrics.images]]:[[ru?'Страниц':'Pages',report.summary.pages],[ru?'Связей':'Links',report.summary.distinctInternalEdges??'—'],[ru?'Без входящих в наборе':'No observed incoming',report.summary.noObservedIncoming??'—'],[ru?'Кластеров':'Clusters',(report.clusters||[]).length]];
+ const unknown=ru?'нет данных':'unknown';
+ const values=d?[[ru?'Слов':'Words',d.metrics.words],[ru?'Заголовков':'Headings',d.metrics.headings],[ru?'Ссылок':'Links',d.metrics.links],[ru?'Изображений':'Images',d.metrics.images]]:[[ru?'Страниц':'Pages',report.summary.pages],[ru?'Связей':'Links',report.summary.distinctInternalEdges??unknown],[ru?'Без входящих в наборе':'No observed incoming',report.summary.noObservedIncoming??unknown],[ru?'Кластеров':'Clusters',report.summary.clusters??unknown]];
  for(const[label,value]of values){const cell=element('div');cell.append(element('strong',String(value)),element('span',label));metrics.append(cell);}host.append(metrics);
  if(!d){renderGraph(host,report,ru);return;}
  const summary=element('div',undefined,'reproleaf-status-summary');
@@ -90,10 +95,12 @@ function renderInspection(d,language,onSelect){
  map.append(sheet,element('p',ru?'Нажмите на маркер, чтобы перейти к проверке.':'Select a marker to inspect its check.','reproleaf-help'));return map;
 }
 function renderGraph(host,report,ru){
- if(report.scope?.evidenceScope==='urls-only'){host.append(element('p',ru?'XML содержит адреса, но не гиперссылки. Загрузите JSON из WordPress, чтобы увидеть граф связей и рекомендации.':'XML contains URLs, not hyperlinks. Upload the WordPress JSON to see link relationships and recommendations.','reproleaf-help'));return;}
+ if(report.scope?.evidenceScope==='urls-only'){host.append(element('p',ru?'Переданы только URL, без гиперссылок. Загрузите JSON наблюдаемых ссылок, чтобы проверить граф.':'Only page URLs were supplied, without hyperlinks. Import a stored-link inventory JSON to inspect relationships.','reproleaf-help'));return;}
+ if(report.scope?.evidenceScope==='metadata-only'){host.append(element('p',ru?'Проверены только переданные метаданные. Граф ссылок и сиротские страницы не оценивались.':'Only supplied metadata was checked. The link graph and orphan candidates were not evaluated.','reproleaf-help'));return;}
+ if(report.scope?.linkObservationCoverage?.internalComplete===false||report.summary.noObservedIncoming===null){host.append(element('p',ru?'Полный граф недоступен: сведения о ссылках переданы не для всех источников. Известные наблюдения сохранены в отчёте.':'The complete graph is unavailable because some donor link evidence is missing. Known observations remain in the report.','reproleaf-help'));return;}
  const ns='http://www.w3.org/2000/svg',svg=document.createElementNS(ns,'svg');svg.setAttribute('viewBox','0 0 440 320');svg.setAttribute('role','img');svg.setAttribute('aria-label',ru?'Граф переданных внутренних ссылок. Сплошные линии — наблюдаемые связи.':'Supplied internal-link graph. Solid lines represent observed links.');svg.classList.add('reproleaf-link-graph');
  const nodes=report.pages.slice(0,40),positions=new Map(nodes.map((p,i)=>[p.url,{x:220+135*Math.cos(2*Math.PI*i/nodes.length),y:160+125*Math.sin(2*Math.PI*i/nodes.length)}]));let count=0;
  for(const edge of report.edges||[]){const a=positions.get(edge.source),b=positions.get(edge.target);if(!a||!b||count>=120)continue;const line=document.createElementNS(ns,'line');for(const[k,v]of Object.entries({x1:a.x,y1:a.y,x2:b.x,y2:b.y}))line.setAttribute(k,v);line.setAttribute('stroke','#c8ced8');svg.append(line);count++;}
- for(const[nodeIndex,node]of nodes.entries()){const p=positions.get(node.url),circle=document.createElementNS(ns,'circle');circle.setAttribute('cx',p.x);circle.setAttribute('cy',p.y);circle.setAttribute('r',6);circle.setAttribute('fill',node.incomingPages?'#267453':'#a76b18');const title=document.createElementNS(ns,'title');title.textContent=`${nodeIndex+1}. ${node.title}: ${node.url}`;circle.append(title);svg.append(circle);const label=document.createElementNS(ns,'text');label.setAttribute('x',p.x+10);label.setAttribute('y',p.y+4);label.setAttribute('font-size',10);label.textContent=String(nodeIndex+1);svg.append(label);}
+ for(const[nodeIndex,node]of nodes.entries()){const p=positions.get(node.url),circle=document.createElementNS(ns,'circle');circle.setAttribute('cx',p.x);circle.setAttribute('cy',p.y);circle.setAttribute('r',6);circle.setAttribute('fill',Number.isFinite(node.incomingPages)?node.incomingPages>0?'#267453':'#a76b18':'#c8ced8');const title=document.createElementNS(ns,'title');title.textContent=`${nodeIndex+1}. ${node.title}: ${node.url}`;circle.append(title);svg.append(circle);const label=document.createElementNS(ns,'text');label.setAttribute('x',p.x+10);label.setAttribute('y',p.y+4);label.setAttribute('font-size',10);label.textContent=String(nodeIndex+1);svg.append(label);}
  host.append(svg,element('p',ru?`Показано ${nodes.length} из ${report.pages.length} страниц и ${count} наблюдаемых связей. Это часть выгрузки, не карта всего интернета. Номера соответствуют порядку страниц в отчёте.`:`Showing ${nodes.length} of ${report.pages.length} pages and ${count} observed links. This is the supplied scope, not the whole web. Numbers follow report page order.`,'reproleaf-help'));
 }

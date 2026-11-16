@@ -1,9 +1,10 @@
 import {parse} from 'parse5';
 import {z} from 'zod';
+import {assertMarkupSourceBudget,assertMarkupTreeBudget,isWebUrl} from './markup-input-guards.mjs';
 
 export const socialAuditSchema=z.object({
  html:z.string().min(1).max(1048576),
- url:z.string().url().max(2048).optional()
+ url:z.string().url().max(2048).refine(isWebUrl,'Expected an HTTP(S) page URL without credentials').optional()
 }).strict();
 
 const validTwitterCards=new Set(['summary','summary_large_image','app','player']);
@@ -71,7 +72,12 @@ function mapFirstAndCheckDuplicates(entries,keysToCheck,findings){
 
 function checkImageUrl(tag,value,findings){
  if(!value)return;
- if(value.startsWith('http://')){
+ if(!isWebUrl(value)){
+  findings.push({code:'SOCIAL_INVALID_IMAGE_URL',severity:'error',tag,message:`${tag} is not a valid absolute HTTP(S) URL without credentials.`,recommendation:'Supply a valid absolute HTTP(S) image URL. No image was fetched.'});
+  if(!/^[a-z][a-z0-9+.-]*:/i.test(value))findings.push({code:'SOCIAL_RELATIVE_IMAGE_URL',severity:'error',tag,message:`${tag} uses relative URL "${value}".`,recommendation:'Use an absolute HTTP(S) URL for this social image profile.'});
+  return;
+ }
+ if(new URL(value).protocol==='http:'){
   findings.push({
    code:'SOCIAL_IMAGE_HTTP_NOT_HTTPS',
    severity:'warning',
@@ -79,20 +85,14 @@ function checkImageUrl(tag,value,findings){
    message:`${tag} uses insecure http:// URL "${value}".`,
    recommendation:`Serve ${tag} over https:// so social platforms do not block mixed content.`
   });
- }else if(!value.startsWith('https://')){
-  findings.push({
-   code:'SOCIAL_RELATIVE_IMAGE_URL',
-   severity:'error',
-   tag,
-   message:`${tag} uses non-absolute URL "${value}".`,
-   recommendation:`Use an absolute https:// URL for ${tag}; social crawlers often fail on relative paths.`
-  });
  }
 }
 
 export function auditSocialMeta(rawInput){
  const parsed=socialAuditSchema.parse(rawInput);
+ assertMarkupSourceBudget(parsed.html);
  const doc=parse(parsed.html);
+ assertMarkupTreeBudget(doc);
  const state={title:null,canonical:null,metaDescription:null,og:[],twitter:[]};
  collectSocialTags(doc,state);
  const findings=[];
@@ -120,6 +120,9 @@ export function auditSocialMeta(rawInput){
   site:twMap.get('twitter:site')||null,
   creator:twMap.get('twitter:creator')||null
  };
+ for(const [tag,value] of [['og:url',openGraph.url],['canonical',state.canonical]]){
+  if(value&&!isWebUrl(value))findings.push({code:'SOCIAL_INVALID_PAGE_URL',severity:'error',tag,message:`${tag} is not a valid absolute HTTP(S) URL without credentials.`,recommendation:'Use a valid HTTP(S) page address. Source values are not fetched.'});
+ }
 
  if(!openGraph.title){
   findings.push({
@@ -253,6 +256,6 @@ export function auditSocialMeta(rawInput){
    card:twitter.card||(previewImage?'summary_large_image':'summary')
   },
   findings,
-  limits:['Inspects static <meta> tags in supplied HTML without fetching image dimensions or remote URLs.']
+  limits:['Inspects static <meta> tags in supplied HTML without fetching image dimensions or remote URLs.','No platform rendering, social cache, image availability or rich-result eligibility is verified.','Input is bounded by UTF-8 bytes and DOM depth/node count.']
  };
 }

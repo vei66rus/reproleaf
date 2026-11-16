@@ -43,7 +43,7 @@
           </div>
           <div data-packet-fields="" hidden=""><label>JSON packet with the draft, claims, sources and glossary<textarea class="ym-disable-keys" name="packet" rows="14" maxlength="1048576" spellcheck="false"></textarea></label><p class="reproleaf-help">The archive includes the format and an example. The get_workflow MCP tool also returns the schema.</p></div>
           <div data-blog-fields="" hidden="">
-            <p>Load an inventory of published pages. Incoming links are counted only within this data; navigation and dynamic blocks may be omitted.</p>
+            <p>Load an inventory of published pages. Incoming links are counted only within this data; navigation and dynamic blocks may be omitted. JSON can also include explicit HTML metadata facts from a saved crawl export; the example shows their format. Omitted facts and sitemap-only fields remain unchecked.</p>
             <label>JSON or XML sitemap, up to 5 MiB<input class="ym-disable-keys" type="file" name="blogFile" accept="application/json,application/xml,text/xml,.json,.xml"></label>
             <label>Or paste the JSON / XML inventory<textarea class="ym-disable-keys" name="blog" rows="14" maxlength="5242880" spellcheck="false"></textarea></label>
             <button type="button" data-load-blog-example="" class="reproleaf-text-button">Load a three-page example</button>

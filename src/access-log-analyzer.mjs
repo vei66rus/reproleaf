@@ -31,19 +31,24 @@ function detectBotFamily(ua){
 }
 
 function normalizePath(rawUrl){
- try{
-  if(/^https?:\/\//i.test(rawUrl)){
-   const u=new URL(rawUrl);
-   const p=u.pathname.length>1&&u.pathname.endsWith('/')?u.pathname.slice(0,-1):u.pathname;
-   return `${p}${u.search}`;
-  }
- }catch{}
- const noHash=String(rawUrl||'').split('#')[0].trim()||'/';
- const qIdx=noHash.indexOf('?');
- const pathname=qIdx===-1?noHash:noHash.slice(0,qIdx);
- const search=qIdx===-1?'':noHash.slice(qIdx);
- const cleanPath=pathname.length>1&&pathname.endsWith('/')?pathname.slice(0,-1):pathname;
- return `${cleanPath}${search}`;
+ let pathname;
+ try{pathname=new URL(String(rawUrl||'/'),'https://reproleaf.invalid').pathname;}catch{return '/[invalid-path]';}
+ try{pathname=decodeURIComponent(pathname);}catch{}
+ pathname=pathname.split(/[?#]/)[0];
+ let redactNext=false;
+ const parts=pathname.split('/').map(segment=>{
+  const secretKey=/^(?:api[-_]?key|token|access[-_]?token|secret|password|session|authorization)$/i.test(segment);
+  const redact=redactNext||/@/.test(segment)||/^(?:\d{1,3}\.){3}\d{1,3}$/.test(segment)||/(?:[a-f\d]{0,4}:){2}/i.test(segment)||/^[a-f\d-]{24,}$/i.test(segment)||segment.length>80;
+  redactNext=secretKey;
+  return redact?'[redacted]':segment.replace(/[\u0000-\u001f\u007f]/g,'');
+ });
+ const clean=parts.join('/')||'/';
+ return clean.length>1&&clean.endsWith('/')?clean.slice(0,-1):clean;
+}
+
+function safePageReference(raw){
+ const clean=normalizePath(raw);
+ try{const url=new URL(raw);if(/^(?:\d{1,3}\.){3}\d{1,3}$/.test(url.hostname)||url.hostname.includes(':'))return clean;return ['http:','https:'].includes(url.protocol)?url.origin+clean:clean;}catch{return clean;}
 }
 
 function parseLogRecord(line,format){
@@ -55,18 +60,19 @@ function parseLogRecord(line,format){
    const rawUrl=obj.ClientRequestURI||obj.ClientRequestPath||obj.requestUri||obj.uri||obj.path;
    const status=Number(obj.EdgeResponseStatus??obj.OriginResponseStatus??obj.status);
    const ua=String(obj.ClientRequestUserAgent||obj.userAgent||obj.ua||'');
-   if(!rawUrl||!Number.isInteger(status))return null;
-   return {path:normalizePath(rawUrl),status,userAgent:ua};
+   if(typeof rawUrl!=='string'||!rawUrl||!Number.isInteger(status)||status<100||status>599)return null;
+   return {path:normalizePath(rawUrl),status,userAgent:ua,parameterCandidate:wasteParamRe.test(rawUrl)};
   }catch{
    return null;
   }
  }
  const m=trimmed.match(combinedLogRe);
- if(!m)return null;
+ if(!m||Number(m[2])<100||Number(m[2])>599)return null;
  return {
   path:normalizePath(m[1]),
   status:Number(m[2]),
-  userAgent:m[3]||''
+  userAgent:m[3]||'',
+  parameterCandidate:wasteParamRe.test(m[1])
  };
 }
 
@@ -77,7 +83,7 @@ export function analyzeAccessLogs(rawInput){
  let totalHits=0;
  let unparsedLines=0;
  let botHits=0;
- const botStatusDistribution={'2xx':0,'3xx':0,'4xx':0,'5xx':0};
+ const botStatusDistribution={'1xx':0,'2xx':0,'3xx':0,'4xx':0,'5xx':0};
  const hitsByBot=new Map();
  const hitsByPath=new Map();
  const wasteByPath=new Map();
@@ -108,7 +114,7 @@ export function analyzeAccessLogs(rawInput){
   const is4xx=rec.status>=400&&rec.status<500;
   const is5xx=rec.status>=500;
   const is3xx=rec.status>=300&&rec.status<400;
-  const isParamWaste=wasteParamRe.test(rec.path);
+  const isParamWaste=rec.parameterCandidate;
 
   if(is4xx)wasteOn4xx+=1;
   if(is5xx)wasteOn5xx+=1;
@@ -123,11 +129,11 @@ export function analyzeAccessLogs(rawInput){
  }
 
  const normalizedCrawledPaths=input.crawledUrls.map(u=>({raw:u,path:normalizePath(u)}));
- const invisiblePages=normalizedCrawledPaths
+ const invisiblePages=totalHits===0?[]:normalizedCrawledPaths
   .filter(item=>!hitsByPath.has(item.path)&&!hitsByPath.has(item.path.split('?')[0]))
-  .map(item=>item.raw);
+  .map(item=>safePageReference(item.raw));
 
- const wasteRate=botHits>0?Number((wastedHits/botHits).toFixed(4)):0;
+ const wasteRate=botHits>0?Number((wastedHits/botHits).toFixed(4)):null;
  const topCrawledPaths=[...hitsByPath.entries()]
   .sort((a,b)=>b[1]-a[1])
   .slice(0,25)
@@ -138,11 +144,13 @@ export function analyzeAccessLogs(rawInput){
   .map(([target,hits])=>({target,hits}));
 
  const findings=[];
+ if(totalHits===0)findings.push({code:'LOGS_NO_PARSED_RECORDS',severity:'error',message:'No valid records were parsed. No conclusion about bot activity can be drawn.'});
+ else if(botHits===0)findings.push({code:'LOGS_NO_KNOWN_BOT_UA',severity:'info',message:'No recognized bot user-agent signatures were observed in the supplied records. This does not prove that bots never visited.'});
  if(wasteRate>=0.25&&botHits>=4){
   findings.push({
    code:'LOGS_HIGH_CRAWL_BUDGET_WASTE',
    severity:'warning',
-   message:`${Math.round(wasteRate*100)}% of bot hits went to 3xx/4xx/5xx or parameterized URLs.`
+   message:`${Math.round(wasteRate*100)}% of requests claiming a known bot user agent received 3xx/4xx/5xx or used selected URL parameters. These are review candidates, not measured wasted crawl budget.`
   });
  }
  if(wasteOn5xx>0){
@@ -150,7 +158,7 @@ export function analyzeAccessLogs(rawInput){
    code:'LOGS_BOT_5XX_ERRORS',
    severity:'error',
    count:wasteOn5xx,
-   message:`Search/AI crawlers hit ${wasteOn5xx} 5xx server error response(s).`
+   message:`Requests claiming a known crawler user agent received ${wasteOn5xx} 5xx server error response(s). Bot identity was not verified.`
   });
  }
  if(invisiblePages.length>0){
@@ -158,18 +166,21 @@ export function analyzeAccessLogs(rawInput){
    code:'LOGS_INVISIBLE_CRAWLED_PAGES',
    severity:'info',
    count:invisiblePages.length,
-   message:`${invisiblePages.length} site URL(s) received zero crawler hits in this log window.`
+   message:`${invisiblePages.length} supplied URL(s) had no matching known-bot user-agent path in these supplied records. This does not establish indexing or bot identity.`
   });
  }
 
  return {
-  ok:wasteOn5xx===0,
+  ok:totalHits>0&&wasteOn5xx===0,
+  scope:{botIdentity:'claimed-user-agent-only',networkVerification:false,pathMatching:'Query and fragment removed; known sensitive path segments redacted. Review paths before sharing.',crawlBudget:'3xx/4xx/5xx and selected parameters are review candidates, not measured wasted crawl budget.'},
   summary:{
    totalHits,
    unparsedLines,
    botHits,
    wastedHits,
    crawlBudgetWasteRatio:wasteRate,
+   reviewCandidateHits:wastedHits,
+   reviewCandidateRatio:wasteRate,
    wasteOn4xx,
    wasteOn3xx,
    wasteOn5xx,

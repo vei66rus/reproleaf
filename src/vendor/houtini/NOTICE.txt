@@ -1,0 +1,15 @@
+Houtini SEO Audit derived HTML decoding adapter
+
+Upstream: https://github.com/houtini-ai/seo-audit
+Commit: ff75890fb5c9c39f3c52f8abf99cc2b4a531740d
+Original file: src/core/extract.ts, decodeHtmlBody
+Original file SHA-256: 73cf131bc34675577033aa877d3076ea3fbe1f8ee16beb82c251dae61b133be7
+License: Apache License 2.0, reproduced in LICENSE.
+
+Upstream LICENSE application appendix: Copyright 2024 Houtini Ltd
+Upstream src/index.ts notice: Copyright (c) 2026 Richard Baxter / Houtini
+
+Reproleaf modifications, 2026-11-16: Uint8Array input; bounded parse5 DOM
+inspection instead of a declaration regex; BOM and header provenance;
+fatal decoding; separate raw-byte and decoded-text limits; explicit failures;
+Node response and local HTML-file integration. No upstream UI was imported.

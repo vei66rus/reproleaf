@@ -1,11 +1,13 @@
 import {z} from 'zod';
 
+function isWebPolicyUrl(value){try{const url=new URL(value);return ['http:','https:'].includes(url.protocol)&&Boolean(url.hostname)&&!url.username&&!url.password;}catch{return false;}}
+
 export const crawlPolicyAuditSchema=z.object({
- siteUrl:z.string().url().max(2048).optional(),
+ siteUrl:z.string().url().max(2048).refine(isWebPolicyUrl,'Expected an HTTP(S) site URL without credentials').optional(),
  robotsTxt:z.string().max(524288).optional(),
  sitemapXml:z.string().max(2097152).optional(),
  pages:z.array(z.object({
-  url:z.string().url().max(2048),
+  url:z.string().url().max(2048).refine(isWebPolicyUrl,'Expected an HTTP(S) page URL without credentials'),
   canonical:z.string().max(2048).optional(),
   noindex:z.boolean().optional()
  }).strict()).max(1000).optional()
@@ -17,7 +19,10 @@ function stripComments(line){
 }
 
 export function parseRobotsTxt(raw){
- const lines=String(raw||'').split(/\r?\n/);
+ const source=String(raw||'');
+ if(source.length>524288||new TextEncoder().encode(source).length>524288)throw new Error('ROBOTS_INPUT_BUDGET');
+ const lines=source.split(/\r\n?|\n/);
+ if(lines.length>10000)throw new Error('ROBOTS_INPUT_BUDGET');
  const groups=[];
  let currentAgents=[];
  let currentRules=[];
@@ -25,6 +30,7 @@ export function parseRobotsTxt(raw){
  let sawDirective=false;
 
  for(const rawLine of lines){
+  if(rawLine.length>8192)throw new Error('ROBOTS_INPUT_BUDGET');
   const line=stripComments(rawLine);
   if(!line)continue;
   const colon=line.indexOf(':');
@@ -42,6 +48,7 @@ export function parseRobotsTxt(raw){
   }else if(field==='allow'||field==='disallow'){
    sawDirective=true;
    if(currentAgents.length&&value!==''){
+    if(value.length>2048||currentRules.length>=5000)throw new Error('ROBOTS_INPUT_BUDGET');
     currentRules.push({type:field,pattern:value});
    }
   }else if(field==='sitemap'){
@@ -57,22 +64,38 @@ export function parseRobotsTxt(raw){
  return {groups,wildcardRules,sitemaps};
 }
 
-function matchRobotsPattern(pathAndQuery,pattern){
+function normalizeRobotsOctets(value){
+ const decoded=value.replace(/%([0-9a-f]{2})/gi,(_,hex)=>{const char=String.fromCharCode(parseInt(hex,16));return /^[A-Za-z0-9._~-]$/.test(char)?char:'%'+hex.toUpperCase();});
+ let result='';for(const char of decoded){if(char.codePointAt(0)>127){try{result+=encodeURIComponent(char);}catch{throw new Error('ROBOTS_PATTERN_INVALID');}}else result+=char;}
+ return result;
+}
+function matchRobotsPattern(pathAndQuery,pattern,budget){
  if(!pattern)return false;
  const anchoredEnd=pattern.endsWith('$');
- const cleanPattern=anchoredEnd?pattern.slice(0,-1):pattern;
- const escaped=cleanPattern
-  .replace(/[.+?^${}()|[\]\\]/g,'\\$&')
-  .replace(/\*/g,'.*');
- const regex=new RegExp(`^${escaped}${anchoredEnd?'$':''}`);
- return regex.test(pathAndQuery);
+ const normalized=normalizeRobotsOctets(anchoredEnd?pattern.slice(0,-1):pattern),target=pathAndQuery;
+ budget.remaining-=normalized.length;if(budget.remaining<0)throw new Error('ROBOTS_MATCH_BUDGET');
+ const glob=normalized+(anchoredEnd?'':'*');
+ let source=0,rule=0,star=-1,checkpoint=0;
+ while(source<target.length){
+  if(--budget.remaining<0)throw new Error('ROBOTS_MATCH_BUDGET');
+  if(rule<glob.length&&glob[rule]!=='*'&&glob[rule]===target[source]){source++;rule++;}
+  else if(glob[rule]==='*'){star=rule++;checkpoint=source;}
+  else if(star!==-1){rule=star+1;source=++checkpoint;}
+  else return false;
+ }
+ while(glob[rule]==='*')rule++;
+ return rule===glob.length;
 }
 
-export function isBlockedByRules(pathAndQuery,rules){
+export function isBlockedByRules(pathAndQuery,rules,budget={remaining:2000000}){
+ if(typeof pathAndQuery!=='string'||pathAndQuery.length>4096||!Array.isArray(rules)||rules.length>5000)throw new Error('ROBOTS_MATCH_BUDGET');
+ const target=normalizeRobotsOctets(pathAndQuery);budget.remaining-=target.length;if(budget.remaining<0)throw new Error('ROBOTS_MATCH_BUDGET');
+ if(target.split('?')[0]==='/robots.txt')return null;
  let bestMatch=null;
  for(const rule of rules){
-  if(matchRobotsPattern(pathAndQuery,rule.pattern)){
-   const len=rule.pattern.length;
+  if(typeof rule?.pattern!=='string'||rule.pattern.length>2048||!['allow','disallow'].includes(rule.type))throw new Error('ROBOTS_PATTERN_INVALID');
+  if(matchRobotsPattern(target,rule.pattern,budget)){
+   const len=normalizeRobotsOctets(rule.pattern.replace(/\*/g,'').replace(/\$$/,'')).length;
    if(!bestMatch||len>bestMatch.len||(len===bestMatch.len&&rule.type==='allow')){
     bestMatch={type:rule.type,len,pattern:rule.pattern};
    }
@@ -109,13 +132,14 @@ function parseSitemapXml(raw){
 
 export function auditCrawlPolicy(rawInput){
  const parsed=crawlPolicyAuditSchema.parse(rawInput);
- if(typeof parsed.robotsTxt!=='string'&&typeof parsed.sitemapXml!=='string'){
-  throw Error('Provide at least robotsTxt or sitemapXml.');
+ if(!parsed.robotsTxt?.trim()&&!parsed.sitemapXml?.trim()){
+  throw Error('Provide nonempty robotsTxt or sitemapXml.');
  }
  const findings=[];
  const siteOrigin=parsed.siteUrl?new URL(parsed.siteUrl).origin:null;
- const robots=typeof parsed.robotsTxt==='string'?parseRobotsTxt(parsed.robotsTxt):null;
- const sitemap=typeof parsed.sitemapXml==='string'?parseSitemapXml(parsed.sitemapXml):null;
+ const robots=parsed.robotsTxt?.trim()?parseRobotsTxt(parsed.robotsTxt):null;
+ const sitemap=parsed.sitemapXml?.trim()?parseSitemapXml(parsed.sitemapXml):null;
+ const matchBudget={remaining:5000000};
 
  if(robots){
   const hasDisallowAll=robots.wildcardRules.some(r=>r.type==='disallow'&&r.pattern==='/');
@@ -139,7 +163,7 @@ export function auditCrawlPolicy(rawInput){
    });
   }
   for(const sm of robots.sitemaps){
-   if(!/^https?:\/\//i.test(sm)){
+   if(!isWebPolicyUrl(sm)){
     findings.push({
      code:'ROBOTS_RELATIVE_SITEMAP',
      severity:'error',
@@ -208,6 +232,7 @@ export function auditCrawlPolicy(rawInput){
     let locUrl;
     try{
      locUrl=new URL(loc);
+     if(!isWebPolicyUrl(loc))throw new Error('Unsupported web URL');
     }catch{
      findings.push({
       code:'SITEMAP_INVALID_URL',
@@ -235,7 +260,7 @@ export function auditCrawlPolicy(rawInput){
     }
     if(robots){
      const pathAndQuery=`${locUrl.pathname}${locUrl.search}`;
-     const blockedRule=isBlockedByRules(pathAndQuery,robots.wildcardRules);
+     const blockedRule=isBlockedByRules(pathAndQuery,robots.wildcardRules,matchBudget);
      if(blockedRule){
       blockedInSitemap+=1;
       findings.push({
@@ -288,6 +313,7 @@ export function auditCrawlPolicy(rawInput){
  const warnings=findings.filter(f=>f.severity==='warning').length;
  return {
   ok:errors===0,
+  scope:{robotsObserved:Boolean(robots),sitemapObserved:Boolean(sitemap),userAgent:'*',networkUsed:false,robotsPatternProfile:'Case-sensitive path/query, wildcard/end-anchor and percent-encoded octet comparisons. Supplied wildcard groups only; no live fetch, status, caching or crawler-specific behavior is measured.'},
   siteOrigin,
   summary:{
    errors,
@@ -302,6 +328,6 @@ export function auditCrawlPolicy(rawInput){
   robots:robots?{sitemaps:robots.sitemaps,wildcardRules:robots.wildcardRules}:null,
   sitemap:sitemap?{kind:sitemap.kind,totalUrls:sitemap.locs.length,uniqueUrls:seenSitemapUrls.size}:null,
   findings,
-  limits:['Evaluates supplied robots.txt, sitemap.xml and optional page metadata locally without fetching remote URLs.']
+  limits:['Evaluates supplied robots.txt, sitemap.xml and optional page metadata locally without fetching remote URLs.','Robots checks use supplied wildcard groups, not arbitrary crawler-specific behavior or live access. Sitemap extraction is a limited loc profile, not complete XML-schema validation.']
  };
 }

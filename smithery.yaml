@@ -2,10 +2,16 @@ startCommand:
   type: stdio
   configSchema:
     type: object
-    properties: {}
+    required: [serverPath]
+    properties:
+      serverPath:
+        type: string
+        description: Absolute path to src/mcp.mjs in the unpacked Reproleaf kit. Install its dependencies locally before starting.
+        minLength: 1
   commandFunction: |-
     (config) => ({
-      command: 'npx',
-      args: ['-y', 'reproleaf-mcp']
+      command: 'node',
+      args: [config.serverPath]
     })
-exampleConfig: {}
+exampleConfig:
+  serverPath: /absolute/path/to/reproleaf/src/mcp.mjs

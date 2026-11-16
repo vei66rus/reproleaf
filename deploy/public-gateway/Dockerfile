@@ -4,6 +4,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev --ignore-scripts --no-audit --no-fund && npm cache clean --force
 COPY --chown=10001:10001 src/*.mjs ./src/
+COPY --chown=10001:10001 src/vendor ./src/vendor
 COPY --chown=10001:10001 cases ./cases
 COPY --chown=10001:10001 packs ./packs
 COPY --chown=10001:10001 examples ./examples

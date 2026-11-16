@@ -1,7 +1,23 @@
-export const supportedTools=['ai-crawler','serp-preview','llms-studio','geo-clarity','cocoon-matrix','cocoon-visualizer','hreflang-sitemap','benchmark-leaderboard'];
+export const supportedTools=['ai-crawler','serp-preview','llms-studio','geo-clarity','cocoon-matrix','cocoon-visualizer','hreflang-sitemap','benchmark-leaderboard','gsc-quick-wins','keyword-cleaner','log-bot','eeat','serp-gap','jsonld-schema','social-meta','robots-policy','redirect-chain'];
 
 export async function loadToolModule(toolName){
  switch(toolName){
+  case 'robots-policy':
+  case 'redirect-chain':
+   return import('./tools/policy-trace.js');
+  case 'jsonld-schema':
+  case 'social-meta':
+   return import('./tools/markup-inspector.js');
+  case 'gsc-quick-wins':
+   return import('./tools/gsc-quick-wins.js');
+  case 'keyword-cleaner':
+   return import('./tools/keyword-cleaner.js');
+  case 'log-bot':
+   return import('./tools/log-bot.js');
+  case 'eeat':
+   return import('./tools/eeat.js');
+  case 'serp-gap':
+   return import('./tools/serp-gap.js');
   case 'ai-crawler':
    return import('./tools/ai-crawler.js');
   case 'serp-preview':
@@ -35,6 +51,12 @@ export async function mountToolContainers(root=typeof document!=='undefined'?doc
    if(typeof mod.mount==='function')mod.mount(node);
   }catch{
    node.dataset.reproleafMounted='error';
+   const english=node.dataset.language==='en';
+   const status=document.createElement('p');
+   status.className='reproleaf-status';status.setAttribute('role','status');
+   status.textContent=english?'The tool could not open. Reload the page to try again. No input was sent.':'Не удалось открыть инструмент. Перезагрузите страницу и попробуйте снова. Входные данные не отправлялись.';
+   const retry=document.createElement('button');retry.type='button';retry.className='agent-kit-download';retry.textContent=english?'Reload tool':'Перезагрузить инструмент';retry.addEventListener('click',()=>location.reload());
+   node.replaceChildren(status,retry);
   }
  }));
 }

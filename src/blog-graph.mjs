@@ -1,8 +1,11 @@
 import {z} from 'zod';
 import {buildRecommendationEvidence} from './recommendation-evidence.mjs';
 import {passageInventorySchema} from './passage-inventory.mjs';
+import {observeInventoryMetadata} from './inventory-observations.mjs';
 const http=z.string().url().max(2048).refine(v=>/^https?:$/.test(new URL(v).protocol),'HTTP(S) URL required');
-export const blogSchema=z.object({schemaVersion:z.literal(1),siteUrl:http,coverage:z.string().max(3000),recommendationMode:z.literal('legacy').optional(),evidenceScope:z.enum(['stored-links','urls-only']).default('stored-links'),pages:z.array(z.object({url:http,title:z.string().max(1000),kind:z.enum(['article','hub','other']).default('article'),locale:z.string().max(20).optional(),textScope:z.enum(['full','excerpt','unknown']).default('unknown'),cluster:z.string().max(200).optional(),h1:z.string().max(1000).optional(),primaryQuery:z.string().max(300).optional(),text:z.string().max(50000).default(''),passageInventory:passageInventorySchema.optional(),links:z.array(z.object({href:z.string().max(2048),anchor:z.string().max(1000).default(''),region:z.enum(['content','navigation','unknown']).optional()}).strict()).max(1000)}).strict()).min(1).max(1000)}).strict();
+export const htmlMetadataFactsSchema=z.discriminatedUnion('status',[z.object({status:z.literal('observed'),titlePresent:z.boolean().nullable().optional(),description:z.string().max(1000).nullable().optional(),h1Count:z.number().int().min(0).max(20000).nullable().optional(),canonicalCount:z.number().int().min(0).max(20000).nullable().optional()}).strict(),z.object({status:z.literal('not-processed'),reason:z.enum(['size-limit','complexity-limit','incomplete-response','unsupported-document-type','body-not-observed'])}).strict()]);
+export const blogPageMetadataSchema=z.object({canonical:z.string().max(2048).nullable().optional(),httpStatus:z.number().int().min(100).max(599).nullable().optional(),robotsMeta:z.string().max(2000).nullable().optional(),internalLinksObserved:z.boolean().optional(),externalLinksObserved:z.boolean().optional(),htmlFacts:htmlMetadataFactsSchema.optional(),observedAt:z.string().max(80).datetime({offset:true}).optional(),source:z.enum(['supplied','html','http']).optional()}).strict();
+export const blogSchema=z.object({schemaVersion:z.literal(1),siteUrl:http,coverage:z.string().max(3000),recommendationMode:z.literal('legacy').optional(),evidenceScope:z.enum(['stored-links','urls-only','metadata-only']).default('stored-links'),pages:z.array(z.object({url:http,title:z.string().max(1000),kind:z.enum(['article','hub','other']).default('article'),locale:z.string().max(20).optional(),textScope:z.enum(['full','excerpt','unknown']).default('unknown'),cluster:z.string().max(200).optional(),h1:z.string().max(1000).optional(),metadata:blogPageMetadataSchema.optional(),primaryQuery:z.string().max(300).optional(),text:z.string().max(50000).default(''),passageInventory:passageInventorySchema.optional(),links:z.array(z.object({href:z.string().max(2048),anchor:z.string().max(1000).default(''),region:z.enum(['content','navigation','unknown']).optional()}).strict()).max(1000)}).strict()).min(1).max(1000)}).strict();
 export function countPhrase(text,phrase){
  if(!phrase?.trim())return null;
  const normalized=text.normalize('NFKC').replace(/\s+/g,' ').toLocaleLowerCase(),query=phrase.normalize('NFKC').trim().replace(/\s+/g,' ').toLocaleLowerCase().replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
@@ -33,11 +36,19 @@ function cleanAnchorCandidate(target,sharedTerms,matchedPhrase){
 export function auditBlog(input,onPhase=()=>{}){
  onPhase('validate');
  const data=blogSchema.parse(input),base=new URL(data.siteUrl),byUrl=new Map(),findings=[];
+ if(data.evidenceScope==='metadata-only'){
+  onPhase('metadata');
+  const seen=new Set(),pages=data.pages.map(page=>{const url=new URL(page.url);if(url.origin!==base.origin||url.username||url.password)throw Error('Metadata inventory pages must use the site origin without credentials.');if(seen.has(url.href))throw Error('Duplicate exact page URL in metadata inventory.');seen.add(url.href);return {...page,url:url.href,resolutionBase:url.href};});
+  const observations=observeInventoryMetadata(pages);
+  onPhase('report');
+  return {schemaVersion:1,kind:'blog-graph',scope:{siteOrigin:base.origin,coverage:data.coverage,evidenceScope:'metadata-only',method:'Only supplied metadata within this saved sample is observed. Exact URL identity is retained; internal hyperlinks and content are not analyzed.'},summary:{pages:pages.length,articles:null,internalLinkOccurrences:null,resolvedInternalLinkOccurrences:null,distinctInternalEdges:null,externalLinkOccurrences:null,externalDomains:null,noObservedIncoming:null,unresolvedTargets:null,clusters:null},metadataSummary:observations.summary,coverage:observations.coverage,inventoryObservations:{coverage:observations.coverage,summary:observations.summary,scope:observations.scope,groups:observations.groups,canonicalCycles:observations.cycles,findingCount:observations.findingCount,findingsReturned:observations.findings.length,findingsTruncated:observations.findingsTruncated},strengths:[],findings:observations.findings,pages:pages.map(page=>({url:page.url,title:page.title,kind:page.kind,locale:page.locale,textScope:'unknown',incomingPages:null,outgoingInternalTargets:null,externalTargets:null,unresolvedTargets:null,issueCodes:[...(observations.issueCodes.get(page.url)||[])],metadataObservations:observations.metadata.get(page.url),queryOccurrences:null,titleMatchesH1:null})),edges:[],unresolvedTargets:[],clusters:[],recommendations:[],recommendationsTruncated:false,requiresEditorialReview:true,limits:['Only supplied metadata from this saved sample is checked; this does not establish whole-site coverage or current live state.','Missing, failed or omitted metadata remains unknown. No HTTP requests are made.','Internal links, incoming/outgoing counts, orphan candidates, topic clusters and link recommendations are not analyzed.','Declared canonical relationships do not establish redirects, search-engine-selected canonicals, indexing or ranking.']};
+ }
  function canonical(value,relative=base.href){const u=new URL(value,relative);u.hash='';u.pathname=u.pathname.replace(/\/+$/,'')||'/';return u.href;}
  const pages=data.pages.map((page,index)=>{
   const url=canonical(page.url);if(new URL(url).origin!==base.origin)throw Error('Every page must belong to the inventory site origin.');if(byUrl.has(url))throw Error('Duplicate canonicalized page URL in inventory.');byUrl.set(url,index);return {...page,resolutionBase:page.url,url,incoming:new Set(),outgoing:new Set(),edgeAnchors:new Map(),external:new Set(),unresolved:new Set(),issueCodes:[]};
  });
  if(data.evidenceScope==='urls-only')return {schemaVersion:1,kind:'blog-graph',scope:{siteOrigin:base.origin,coverage:data.coverage,evidenceScope:'urls-only'},summary:{pages:pages.length,articles:0,distinctInternalEdges:null,noObservedIncoming:null},strengths:[{code:'sitemap-scope',message:'The sitemap URLs were parsed locally.'}],findings:[],pages:pages.map(p=>({url:p.url,title:p.title,kind:p.kind,textScope:'unknown',incomingPages:null,outgoingInternalTargets:null,issueCodes:[]})),edges:[],unresolvedTargets:[],clusters:[],recommendations:[],requiresEditorialReview:true,limits:['A sitemap lists URLs; it does not show internal hyperlinks, article content, indexation or HTTP status. Import stored content to audit links.']};
+ const internalEvidenceComplete=pages.every(p=>p.metadata?.internalLinksObserved!==false),externalEvidenceComplete=pages.every(p=>p.metadata?.externalLinksObserved!==false);
  onPhase('links');
  let internalOccurrences=0,resolvedInternalOccurrences=0,externalOccurrences=0;const externalSites=new Set(),unresolvedMap=new Map();
  const add=(page,code,message,priority=3,extra={})=>{
@@ -83,14 +94,14 @@ export function auditBlog(input,onPhase=()=>{}){
  }
  const clusters=new Map();for(const p of pages)if(p.cluster){if(!clusters.has(p.cluster))clusters.set(p.cluster,[]);clusters.get(p.cluster).push(p);}
  for(const p of pages){
-  if(p.kind==='article'&&!p.incoming.size)add(p,'no-observed-incoming','No other supplied page links to this article. Check omitted hubs, navigation and external sources before calling it an orphan.',2,{
+  if(internalEvidenceComplete&&p.kind==='article'&&!p.incoming.size)add(p,'no-observed-incoming','No other supplied page links to this article. Check omitted hubs, navigation and external sources before calling it an orphan.',2,{
    observation:`Page "${p.title}" (${p.url}) has 0 incoming links from the ${pages.length} supplied pages.`,
    why:'Articles without contextual links from related articles or hubs are harder for readers and crawlers to discover.',
    snippet:`${p.title} (${p.cluster||'no cluster'})`,
    suggestion:'Add a contextual link to this article from a relevant hub or related donor page in the same cluster.',
    verifyHint:'Add the link, re-export the inventory with the same page scope and confirm incomingPages > 0.'
   });
-  if(p.kind==='article'&&!p.outgoing.size)add(p,'no-observed-outgoing','No internal target from this article was resolved within the supplied inventory. Review useful onward reading.',3,{
+  if(p.metadata?.internalLinksObserved!==false&&p.kind==='article'&&!p.outgoing.size)add(p,'no-observed-outgoing','No internal target from this article was resolved within the supplied inventory. Review useful onward reading.',3,{
    observation:`Page "${p.title}" (${p.url}) has 0 resolved outgoing links to other supplied pages.`,
    why:'Dead-end articles miss opportunities to guide readers to deeper guides, cases or service hubs.',
    snippet:p.title,
@@ -104,7 +115,7 @@ export function auditBlog(input,onPhase=()=>{}){
    suggestion:'Verify whether these URLs exist on the live site or include their section in the inventory export.',
    verifyHint:'Include all relevant site sections in the export or fix mistyped slugs.'
   });
-  if(p.cluster&&clusters.get(p.cluster).length>1&&![...p.incoming,...p.outgoing].some(url=>pages[byUrl.get(url)]?.cluster===p.cluster))add(p,'no-observed-topic-link','No link to or from a supplied page in the same declared topic cluster was found. Review whether a topic link is useful.',3,{
+  if(internalEvidenceComplete&&p.cluster&&clusters.get(p.cluster).length>1&&![...p.incoming,...p.outgoing].some(url=>pages[byUrl.get(url)]?.cluster===p.cluster))add(p,'no-observed-topic-link','No link to or from a supplied page in the same declared topic cluster was found. Review whether a topic link is useful.',3,{
    observation:`Page "${p.title}" belongs to cluster "${p.cluster}" (${clusters.get(p.cluster).length} pages) but has 0 links within that cluster.`,
    why:'Pages in the same topic cluster usually benefit from connecting to their topic hub or sibling articles.',
    snippet:`cluster: ${p.cluster} (${p.url})`,
@@ -113,7 +124,7 @@ export function auditBlog(input,onPhase=()=>{}){
   });
  }
  const clusterSummaries=[];
- for(const [clusterName,members]of clusters.entries()){
+ if(internalEvidenceComplete)for(const [clusterName,members]of clusters.entries()){
   const memberUrls=new Set(members.map(m=>m.url)),hubs=members.filter(m=>m.kind==='hub'),articles=members.filter(m=>m.kind==='article');
   let internalEdges=0;const isolatedUrls=[],missingHubLinks=[];
   for(const m of members){
@@ -140,9 +151,9 @@ export function auditBlog(input,onPhase=()=>{}){
  const stop=new Set('the and for with from this that how your you our are was can into not but about guide tutorial overview introduction complete ultimate article что как для или при это этой свои ваш его она они без над под все по про руководство инструкция обзор статья полный лучшая лучший'.split(' '));
  const terms=text=>[...new Set((text.normalize('NFKC').toLocaleLowerCase().match(/[\p{L}\p{N}]{3,}/gu)||[]).filter(t=>!stop.has(t)))].slice(0,100);
  const inverted=new Map();for(const p of pages)for(const term of terms((p.h1?.trim()||p.title)+' '+(p.primaryQuery||''))){if(!inverted.has(term))inverted.set(term,[]);inverted.get(term).push(p);}
- onPhase('candidates');
+ if(internalEvidenceComplete)onPhase('candidates');
  const rawCandidates=[];
- for(const source of pages){
+ if(internalEvidenceComplete)for(const source of pages){
   const sourceSample=source.text.slice(0,12000), scores=new Map();
   for(const term of terms(source.title+' '+sourceSample)){
    const matches=inverted.get(term)||[];
@@ -210,21 +221,25 @@ export function auditBlog(input,onPhase=()=>{}){
  onPhase('report');
  const articlePages=pages.filter(p=>p.kind==='article'),orphanCandidates=articlePages.filter(p=>!p.incoming.size).length;
  const unresolvedTargets=[...unresolvedMap.entries()].map(([url,sources])=>({url,referencedFrom:[...sources]})).sort((a,b)=>a.url.localeCompare(b.url));
+ const inventoryObservations=observeInventoryMetadata(pages);
+ for(const page of pages)for(const code of inventoryObservations.issueCodes.get(page.url)||[])if(!page.issueCodes.includes(code))page.issueCodes.push(code);
+ findings.push(...inventoryObservations.findings);
  return {
   schemaVersion:1,
   kind:'blog-graph',
-  scope:{siteOrigin:base.origin,coverage:data.coverage,evidenceScope:'stored-links',method:'Stored links from supplied pages; fragments and trailing slashes normalized, query strings preserved. No network requests.'},
-  summary:{pages:pages.length,articles:articlePages.length,internalLinkOccurrences:internalOccurrences,resolvedInternalLinkOccurrences:resolvedInternalOccurrences,distinctInternalEdges:pages.reduce((n,p)=>n+p.outgoing.size,0),externalLinkOccurrences:externalOccurrences,externalDomains:externalSites.size,noObservedIncoming:orphanCandidates,unresolvedTargets:unresolvedTargets.length,clusters:clusterSummaries.length},
+  scope:{siteOrigin:base.origin,coverage:data.coverage,evidenceScope:'stored-links',linkObservationCoverage:{pages:pages.length,internalObservedPages:pages.filter(p=>p.metadata?.internalLinksObserved!==false).length,externalObservedPages:pages.filter(p=>p.metadata?.externalLinksObserved!==false).length,internalComplete:internalEvidenceComplete,externalComplete:externalEvidenceComplete},method:'Stored links from supplied pages; fragments and trailing slashes normalized, query strings preserved. No network requests.'},
+  summary:{pages:pages.length,articles:articlePages.length,internalLinkOccurrences:internalEvidenceComplete?internalOccurrences:null,resolvedInternalLinkOccurrences:internalEvidenceComplete?resolvedInternalOccurrences:null,distinctInternalEdges:internalEvidenceComplete?pages.reduce((n,p)=>n+p.outgoing.size,0):null,externalLinkOccurrences:externalEvidenceComplete?externalOccurrences:null,externalDomains:externalEvidenceComplete?externalSites.size:null,noObservedIncoming:internalEvidenceComplete?orphanCandidates:null,unresolvedTargets:internalEvidenceComplete?unresolvedTargets.length:null,clusters:internalEvidenceComplete?clusterSummaries.length:null},
   structuralPass:true,
-  strengths:[{code:'graph-scope',message:`${pages.length} supplied pages were analyzed locally.`},...(articlePages.length&&orphanCandidates===0?[{code:'observed-incoming',message:'Every supplied article has an incoming link from another supplied page.'}]:[])],
+  inventoryObservations:{coverage:inventoryObservations.coverage,summary:inventoryObservations.summary,scope:inventoryObservations.scope,groups:inventoryObservations.groups,canonicalCycles:inventoryObservations.cycles,findingCount:inventoryObservations.findingCount,findingsReturned:inventoryObservations.findings.length,findingsTruncated:inventoryObservations.findingsTruncated},
+  strengths:[{code:'graph-scope',message:`${pages.length} supplied pages were analyzed locally.`},...(internalEvidenceComplete&&articlePages.length&&orphanCandidates===0?[{code:'observed-incoming',message:'Every supplied article has an incoming link from another supplied page.'}]:[])],
   findings:findings.sort((a,b)=>a.priority-b.priority),
-  pages:pages.map(p=>({url:p.url,title:p.title,kind:p.kind,locale:p.locale,textScope:p.textScope,cluster:p.cluster,incomingPages:p.incoming.size,outgoingInternalTargets:p.outgoing.size,externalTargets:p.external.size,unresolvedTargets:[...p.unresolved],issueCodes:p.issueCodes,queryOccurrences:p.primaryQuery?{title:countPhrase(p.title,p.primaryQuery),h1:countPhrase(p.h1||'',p.primaryQuery),suppliedText:countPhrase(p.text,p.primaryQuery),method:'Literal Unicode-aware phrase counts, not stemming, intent understanding or a density target.'}:null,titleMatchesH1:p.h1?p.title.trim().toLocaleLowerCase()===p.h1.trim().toLocaleLowerCase():null})),
+  pages:pages.map(p=>({url:p.url,title:p.title,kind:p.kind,locale:p.locale,textScope:p.textScope,cluster:p.cluster,incomingPages:internalEvidenceComplete?p.incoming.size:null,outgoingInternalTargets:p.metadata?.internalLinksObserved===false?null:p.outgoing.size,externalTargets:p.metadata?.externalLinksObserved===false?null:p.external.size,unresolvedTargets:p.metadata?.internalLinksObserved===false?null:[...p.unresolved],issueCodes:p.issueCodes,metadataObservations:inventoryObservations.metadata.get(p.url),queryOccurrences:p.primaryQuery?{title:countPhrase(p.title,p.primaryQuery),h1:countPhrase(p.h1||'',p.primaryQuery),suppliedText:countPhrase(p.text,p.primaryQuery),method:'Literal Unicode-aware phrase counts, not stemming, intent understanding or a density target.'}:null,titleMatchesH1:p.h1?p.title.trim().toLocaleLowerCase()===p.h1.trim().toLocaleLowerCase():null})),
   edges:pages.flatMap(p=>[...p.outgoing].map(target=>({source:p.url,target,anchors:[...(p.edgeAnchors.get(target)||[])]}))),
   unresolvedTargets,
   clusters:clusterSummaries,
   recommendations:recommendations.slice(0,200),
   recommendationsTruncated:recommendations.length>200,
   requiresEditorialReview:true,
-  limits:['No observed incoming link is only a candidate within this inventory, not proof of a site-wide orphan.','Internal incoming links are not external backlinks. External links in these pages do not reveal backlinks to your site.','Missing inventory targets are unresolved, not HTTP-verified broken links.','Clusters are supplied labels. Suggestions use lexical overlap, not an AI understanding of relevance.','No fixed link quota, title/H1 inequality requirement, keyword-density target, ranking score or automatic edits.']
+  limits:['Explicitly unavailable link arrays remain unknown. Incomplete internal donor coverage disables absence findings, link recommendations and complete graph totals.','No observed incoming link is only a candidate within this inventory, not proof of a site-wide orphan.','Internal incoming links are not external backlinks. External links in these pages do not reveal backlinks to your site.','Missing inventory targets are unresolved, not HTTP-verified broken links.','Clusters are supplied labels. Suggestions use lexical overlap, not an AI understanding of relevance.','No fixed link quota, title/H1 inequality requirement, keyword-density target, ranking score or automatic edits.']
  };
 }

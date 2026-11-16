@@ -82,7 +82,8 @@ test('workspace sqlite store saves snapshots, persists nodes/edges/findings and 
   assert.equal(diff.ok,false);
   assert.equal(diff.summary.addedUrlCount,1);
   assert.equal(diff.summary.statusRegressionCount,1);
-  assert.equal(diff.summary.resolvedFindingCount,1);
+  assert.equal(diff.summary.resolvedFindingCount,0);
+  assert.equal(diff.summary.unconfirmedFindingCount,1);
   assert.equal(diff.summary.newFindingCount,1);
 
   const upd=updateFindingStatus(db,snap2.findings[0].id,'fixed');

@@ -32,6 +32,9 @@ function createMiniDom(){
     children.length=0;
     node.append(...items);
    },
+   prepend:(...items)=>{
+    children.unshift(...items);
+   },
    addEventListener:(ev,fn)=>{
     if(!listeners.has(ev))listeners.set(ev,[]);
     listeners.get(ev).push(fn);
@@ -53,7 +56,7 @@ function createMiniDom(){
  };
 }
 
-test('benchmark-leaderboard mount initializes frame.form, frame.metrics, frame.extra and fires telemetry event',()=>{
+test('benchmark-leaderboard mount initializes the frame and emits success after async validation',async()=>{
  const prevDoc=globalThis.document;
  const prevCustomEvent=globalThis.CustomEvent;
  const env=createMiniDom();
@@ -62,14 +65,21 @@ test('benchmark-leaderboard mount initializes frame.form, frame.metrics, frame.e
  try{
   const root=env.makeRoot();
   const events=[];
-  root.addEventListener('reproleaf:tool-event',e=>events.push(e.detail));
+  let completed;
+  const validated=new Promise(resolve=>{completed=resolve;});
+  root.addEventListener('reproleaf:tool-event',e=>{events.push(e.detail);completed();});
   mount(root,{language:'en'});
+  assert.equal(events.length,0,'Mount must not report success before validation finishes.');
+  let timer;
+  try { await Promise.race([validated,new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('Validation did not complete.')),3000);})]); }
+  finally { clearTimeout(timer); }
   assert.equal(events.length,1);
   assert.equal(events[0].tool,'benchmark-leaderboard');
   assert.equal(events[0].action,'run');
   assert.equal(events[0].ok,true);
   assert.match(root.className,/reproleaf-workbench/);
-  assert.equal(root.children.length>=4,true);
+  assert.equal(root.children.filter(node=>node.tagName==='H2').length,1);
+  assert.equal(root.children.some(node=>node.tagName==='H3'),false);
  }finally{
   globalThis.document=prevDoc;
   globalThis.CustomEvent=prevCustomEvent;
@@ -98,15 +108,4 @@ test('summarizeToolDemand ranks tools by run frequency without storing PII',()=>
  assert.equal(ranked.toolsRanked[0].tool,'benchmark-leaderboard');
  assert.equal(ranked.toolsRanked[0].runs,2);
  assert.equal(ranked.toolsRanked[0].failRatePct,50);
-});
-
-test('Week 11 WP comparison articles enforce sponsored rel tags on partner links',async()=>{
- const jsonPath=path.resolve(import.meta.dirname,'../../portfolio/wordpress/content/cases/reproleaf-week11-comparisons.json');
- const data=JSON.parse(await readFile(jsonPath,'utf8'));
- assert.equal(Object.keys(data).length,6);
- for(const entry of Object.values(data)){
-  for(const match of (entry.markdown+'\n'+entry.content).matchAll(/<a\b[^>]*href="https:\/\/(?:dataforseo\.com|topvisor\.com)[^"]*"[^>]*>/g)){
-   assert.match(match[0],/rel="[^"]*\bsponsored\b[^"]*\bnoopener\b[^"]*"/);
-  }
- }
 });

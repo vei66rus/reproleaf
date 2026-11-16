@@ -1,0 +1,14 @@
+axe-core integration
+
+The runtime dependency axe-core is pinned to 4.14.0, MPL-2.0. Its package source is unmodified. LICENSE and LICENSE-3RD-PARTY.txt in this directory are byte-for-byte copies of the corresponding upstream package files. The runtime loads the dependency through normal Node resolution and verifies package version, license and axe.min.js SHA-256 before privileged execution. Both license files must accompany distribution of this integration and the original package notices must remain intact.
+
+Official package: https://www.npmjs.com/package/axe-core
+Official repository: https://github.com/dequelabs/axe-core
+
+Local interface only: accessibility-audit --file page.html --allow-browser, or local MCP audit_static_accessibility with allowBrowser:true. UTF-8 files only; invalid bytes fail explicitly. Inline HTML is already Unicode and is not re-decoded. No public HTTP/restricted MCP/browser UI exposure. Playwright is optional; the operator can set REPROLEAF_BROWSER_EXECUTABLE or use Playwright's installed Chromium. A missing runtime fails unavailable.
+
+Only transformed static HTML is checked: source scripts/handlers/resources are removed or neutralized before first browser parse, embedded documents are rejected, strict CSP is first and browser-context requests are aborted. JavaScript is enabled for trusted pinned axe through a DevTools isolated world. This is not operating-system network isolation or original-site WCAG certification. External CSS/scripts/fonts/images, dynamic states and manual checks remain unknown. Existing title/image-alt checks are delegated rather than repeated or counted passed. Results contain rule identifiers and positional paths in the transformed DOM, not raw HTML/attributes/selectors or source lines.
+
+The parent enforces the 512 KiB UTF-8 budget before spawning one bounded child per local server process. That child parses and renders with 128 MiB Node heap, 10,000 DOM nodes/depth64, 10-second browser launch and 6-second evaluation limits. A parent 20-second work deadline covers parsing/launch/evaluation; Windows owned-process cleanup has a separately bounded budget of at most11seconds plus scheduling overhead. Cleanup verifies the recorded browser PID has exited, never targets global Chrome, and a failed cleanup blocks further jobs until process restart. Each result is capped at2MiB and no more than10 positional paths per rule are included. These bounds are not browser-process OS memory limits or an OS sandbox.
+
+CLI exit code zero means a bounded report was generated, including reports with violations or incomplete checks. It does not mean a clean audit. Missing runtime, denied opt-in, invalid input and execution failures exit nonzero without a successful report. Browser regression tests probe the operator executable, installed Windows Chrome or Playwright Chromium and explicitly skip browser-dependent cases when none is available; non-browser guards still run.

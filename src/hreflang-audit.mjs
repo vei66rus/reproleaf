@@ -1,13 +1,17 @@
 import {z} from 'zod';
 
+function isHttpReference(value){
+ try{const url=new URL(value);return /^https?:\/\//i.test(value)&&!/[\s\u0000-\u001f\u007f]/.test(value)&&!url.username&&!url.password&&!url.hash;}catch{return false;}
+}
+
 export const hreflangAuditSchema=z.object({
  pages:z.array(z.object({
-  url:z.string().url().max(2048),
+  url:z.string().max(2048).refine(isHttpReference,'Use an absolute HTTP(S) URL without whitespace, credentials or fragments').pipe(z.string().url()),
   htmlLang:z.string().max(32).optional(),
   canonical:z.string().max(2048).optional(),
   alternates:z.array(z.object({
    hreflang:z.string().min(1).max(32),
-   href:z.string().url().max(2048)
+   href:z.string().max(2048).refine(isHttpReference,'Use an absolute HTTP(S) URL without whitespace, credentials or fragments').pipe(z.string().url())
   }).strict()).max(100)
  }).strict()).min(1).max(500)
 }).strict();
@@ -30,6 +34,7 @@ export function auditHreflangMatrix(rawInput){
  let alternatesTotal=0;
  let missingReturnLinks=0;
  let missingSelfLinks=0;
+ let uncheckedReturnLinks=0;
  const matrix=[];
 
  for(const page of parsed.pages){
@@ -58,7 +63,7 @@ export function auditHreflangMatrix(rawInput){
      url:page.url,
      target:alt.href,
      message:`Invalid hreflang code "${alt.hreflang}" on "${page.url}".`,
-     recommendation:'Use ISO 639-1 language codes (with optional ISO 3166-1 region) or x-default.'
+    recommendation:'Use a supported language or language-region annotation, or x-default. This checker validates the supported syntax subset, not registry membership.'
     });
    }
    if(seenCodes.has(code))duplicateCodes.add(code);
@@ -107,19 +112,24 @@ export function auditHreflangMatrix(rawInput){
   if(page.alternates.length>=2&&!seenCodes.has('x-default')){
    findings.push({
     code:'HREFLANG_MISSING_X_DEFAULT',
-    severity:'warning',
+    severity:'info',
     url:page.url,
     target:page.url,
-    message:`Multilingual page "${page.url}" is missing an x-default alternate.`,
-    recommendation:'Add hreflang="x-default" pointing to the fallback language or selector URL.'
+    message:`Multilingual page "${page.url}" does not declare an optional x-default alternate.`,
+    recommendation:'Consider x-default if a fallback language or selector page is useful. Its absence alone is not a hreflang error.'
    });
   }
 
   for(const alt of page.alternates){
    if(alt.href===page.url)continue;
    const targetPage=pageMap.get(alt.href);
-   if(!targetPage)continue;
-   const hasReturn=targetPage.alternates.some(back=>back.href===page.url);
+   if(!targetPage){
+    uncheckedReturnLinks+=1;
+    findings.push({code:'HREFLANG_TARGET_NOT_SUPPLIED',severity:'info',url:page.url,target:alt.href,message:`The target "${alt.href}" was not supplied. Its return link was not checked.`,recommendation:'Include the target page in the supplied matrix to check reciprocity. No URL is fetched.'});
+    continue;
+   }
+   const expectedCodes=selfAlternates.filter(code=>code!=='x-default');
+   const hasReturn=targetPage.alternates.some(back=>back.href===page.url&&(expectedCodes.length===0||expectedCodes.includes(back.hreflang.trim().toLowerCase())));
    if(!hasReturn){
     missingReturnLinks+=1;
     findings.push({
@@ -145,17 +155,20 @@ export function auditHreflangMatrix(rawInput){
  const errors=findings.filter(f=>f.severity==='error').length;
  const warnings=findings.filter(f=>f.severity==='warning').length;
  return {
-  ok:errors===0,
+  ok:errors===0&&uncheckedReturnLinks===0&&alternatesTotal>0,
+  status:alternatesTotal===0?'not-processed':uncheckedReturnLinks>0?'partial':errors>0?'issues-found':'completed',
   summary:{
    pages:parsed.pages.length,
    alternatesTotal,
    missingReturnLinks,
    missingSelfLinks,
+   uncheckedReturnLinks,
    errors,
    warnings
   },
   matrix,
   findings,
-  limits:['Validates reciprocal hreflang links across the supplied page matrix without fetching remote URLs.']
+  coverage:{suppliedPages:parsed.pages.length,reciprocityComplete:uncheckedReturnLinks===0&&alternatesTotal>0,languageCodeValidation:'syntax-only; language/region registry membership not checked',urlMatching:'Exact supplied strings; redirects and URL equivalence are not resolved.',httpStatusChecked:false,renderedContentChecked:false},
+  limits:['Validates reciprocal hreflang links across at most 500 supplied pages without fetching remote URLs. Missing targets remain unchecked; no alternates means not processed.']
  };
 }

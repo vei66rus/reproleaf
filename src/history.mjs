@@ -1,4 +1,5 @@
 import {normalizeExecutionProfile} from './execution-profile.mjs';
+import {createInventoryRecheck,isInventoryFinding,hasIncompleteLinkEvidence} from './inventory-recheck.mjs';
 const validDigest=value=>typeof value==='string'&&/^[a-f0-9]{64}$/.test(value);
 const knownBrowser=value=>typeof value==='string'&&value.trim()!==''&&value.trim().toLowerCase()!=='unknown';
 const statuses=new Set(['pass','fail','unsupported','setup-error']);
@@ -37,10 +38,11 @@ export function compareRuns(before,after){
  let scopeChanged=false;
  if(before.objectKey&&after.objectKey&&before.objectKey!==after.objectKey){warnings.push('different-object');scopeChanged=true;}
  if(before.engine!==after.engine){warnings.push('engine-changed');scopeChanged=true;}
- let graphDiff=null,environmentDiff=null;
+ let graphDiff=null,environmentDiff=null,inventoryRecheck=null;
  if(kind==='blog'){
-  const scope=r=>JSON.stringify([r.scope?.siteOrigin,r.scope?.evidenceScope||'stored-links',r.scope?.coverage,(r.pages||[]).map(p=>[p.url,p.kind||'article',p.cluster||null,p.locale||null,p.textScope||'unknown']).sort((x,y)=>x[0].localeCompare(y[0]))]);
+  const scope=r=>JSON.stringify([r.scope?.siteOrigin,r.scope?.evidenceScope||'stored-links',r.scope?.coverage,(r.pages||[]).map(p=>[p.url,p.metadataObservations?.sourceUrl??null,p.kind||'article',p.cluster||null,p.locale||null,p.textScope||'unknown']).sort((x,y)=>x[0].localeCompare(y[0]))]);
   if(scope(a)!==scope(b)){scopeChanged=true;warnings.push('inventory-scope-changed');}
+  inventoryRecheck=createInventoryRecheck(a,b);
   const edgeKey=e=>`${e.source} -> ${e.target}`;
   const edgesA=new Map((a.edges||[]).map(e=>[edgeKey(e),e])),edgesB=new Map((b.edges||[]).map(e=>[edgeKey(e),e]));
   const pagesA=new Set((a.pages||[]).map(p=>p.url)),pagesB=new Set((b.pages||[]).map(p=>p.url));
@@ -50,6 +52,7 @@ export function compareRuns(before,after){
    addedPages:[...pagesB].filter(u=>!pagesA.has(u)),
    removedPages:[...pagesA].filter(u=>!pagesB.has(u))
   };
+  if(hasIncompleteLinkEvidence(a)||hasIncompleteLinkEvidence(b))graphDiff=null;
  }
  if(kind==='frontend'){
   if(!validDigest(a.checkerSha256)||!validDigest(b.checkerSha256)){scopeChanged=true;warnings.push('unversioned-checker');}
@@ -81,6 +84,8 @@ export function compareRuns(before,after){
  for(const [id,finding]of old){
   if(current.has(id))continue;
   let confirmed=!scopeChanged;
+  if(kind==='blog'&&isInventoryFinding(finding))confirmed=confirmed&&inventoryRecheck(finding);
+  if(kind==='blog'&&!isInventoryFinding(finding)&&(hasIncompleteLinkEvidence(a)||hasIncompleteLinkEvidence(b)))confirmed=false;
   if(kind==='editorial'){
    const code=diagnosticFor[finding.code],check=b.diagnostics?.checks?.find(c=>c.code===code);
    if(!code||!check||check.status!=='good')confirmed=false;

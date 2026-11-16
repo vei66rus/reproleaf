@@ -1,5 +1,63 @@
 # Changelog
 
+## 2.3.1 - 2026-11-16
+
+- Show a short localized no-pair status for after, added and removed metrics when only one XML sitemap is supplied. Preserve numeric zero for an actual unchanged comparison and keep the JSON contract unchanged.
+- Keep the single-inventory status inside existing metric cards on RU/EN mobile and desktop layouts; no new components or styles.
+
+## 2.3.0 - 2026-11-16
+
+- Add optional bounded static-HTML facts to the existing inventory report: first HTML title absence, empty description, advisory H1 element count, multiple canonical elements and duplicate descriptions within a locale partition. Missing, ambiguous and oversized values remain unknown; no length score or universal single-H1 requirement is introduced.
+- Populate facts from supplied local HTML and successful saved Node crawl HTML, excluding raw HTML from inventory exports. Keep WordPress saved-crawl projection and URL-only behavior unchanged. Add the supported facts to the existing example/help text and CSV/JSON reports.
+- Require positive supplied evidence for thirteen inventory rechecks. Recompute duplicate values across complete locale partitions; preserve missing captures, incomplete groups and unknown canonical/robots targets as unverified. This is not source-authenticity or cryptographic engine-version verification, and does not verify unrelated finding-only diffs.
+- Leave explicit XHTML DOM facts unsupported rather than infer missing metadata with an HTML parser; retain separately supplied legacy observations.
+- Preserve HTTP204/205/206 status while excluding their body-derived metadata and facts from absence/positive-fix claims. Required empty link arrays represent unavailable body evidence, not known empty documents.
+- Match document-title capture to the first HTML-namespace title; SVG tooltips and a later nonempty title cannot hide an empty first title. Keep ambiguous multiple-canonical targets unknown.
+
+## 2.2.0 - 2026-11-16
+
+- Add an explicit local-only axe-core 4.14.0 static accessibility audit for CLI and unrestricted stdio MCP. Require browser opt-in; use a bounded child, one active job, separate work/owned-cleanup deadlines and safe unavailable/error outcomes. The transformed DOM excludes source scripts/resources; this is not original-page WCAG certification or operating-system network isolation. Public interfaces remain 44 restricted stdio / 46 local HTTP tools; the separately hosted gateway is unchanged.
+- Add metadata-only inventory analysis without link counts, orphan findings, clusters or link recommendations. Retain exact URL identities and unknown fields. The site integration provides an authenticated saved-crawl handoff into the existing workspace without starting a crawl or forwarding project keys.
+- Use bounded byte-aware file reads for html-audit, schema-audit and social-audit, preserving supported charset/BOM observations and rejecting malformed or unsupported input. Other HTML CLI paths remain separate; accessibility-audit deliberately accepts UTF-8 files only.
+- The WordPress site integration decodes bounded received HTML before both native observers using a curated encoding profile, fixed safe failures and engine fingerprinting. Raw transport byte counts and hashes remain original. The PHP declaration parser has explicitly conservative limits and does not claim full HTML5 encoding support.
+- Preserve required axe MPL/third-party licenses and Houtini Apache notices.
+
+
+## 2.1.0 - 2026-11-16
+
+- Decode received HTML bytes before Node parsing and browser file analysis, with BOM/header/meta precedence, explicit supported encoding observations, fatal malformed-input handling, and separate raw/decoded limits. Pasted Unicode and JSON are not decoded again. The WordPress PHP fetch path is separate and still assumes UTF-8 in this release.
+- Add eight supplied-inventory observations for repeated titles/H1, canonical syntax and targets, supplied target HTTP/noindex, chains and cycles. Preserve unknown metadata, explicit locale partitions and URL-only scope. No live target requests or Google-selected canonical claims.
+- Convert saved Node crawl JSON into bounded browser inventories with report --format inventory. Exclude source HTML and response headers, preserve final URL identity, and reject aliases that the existing link graph cannot distinguish.
+- Add editable nginx/Apache redirect drafts from consistent supplied same-origin permanent chains, with explicit 301/308 selection, exact query-free matching, blocked-case explanations and download. Drafts are never applied automatically.
+- Preserve per-URL/rule comparison coverage in private server-project MCP context. The WordPress server integration separately adds evidence-bound partial comparison and readable report scope; finding-only CLI diffs remain unconfirmed.
+- Remove duplicate generic-panel headings and include required reused-code notices in browser archives and the optional gateway image. The hosted gateway is not upgraded by this source release.
+
+
+## 2.0.3 - 2026-11-16
+
+- Treat disappeared findings in finding-only crawl and batch comparisons as unconfirmed, including missing pages and failed reads. These comparisons return `verificationComplete: false`, `ok: false` and CLI exit code 1; `noObservedRegressions` reports only the narrower regression observation. An absent finding is not proof of a fix.
+- Correct local Cursor configuration and remote Windsurf transport labels.
+- Distinguish configuration examples and transport checks from actual client-app verification.
+- Remove obsolete tool counts and unpublished npm installation commands from client recipes.
+
+
+## 2.0.2 (2026-11-16, source release candidate)
+
+- Add RU/EN supplied-data panels for JSON-LD, Open Graph/Twitter metadata, robots rules, redirect observations and hreflang matrices/XML inventory comparison. These panels do not fetch supplied URLs or claim full Google/Schema.org validation, live bot access or platform preview rendering.
+- Add local batch markup review for up to 20 HTML files, 1 MiB each and 5 MiB total, with actual per-file progress, cancellation, exact-content duplicate references and checked/failed/not-processed outcomes. Default exports exclude source HTML and filenames; incomplete coverage never reports an overall successful audit.
+- Validate bounded schema/social inputs, real Schema.org context hosts, calendar dates and HTTP(S) metadata URLs. Keep metadata previews text-only and JSON syntax diagnostics free of source snippets.
+- Tighten robots matching and supplied redirect-trace validation. Preserve unknown final responses and distinguish incomplete traces, open cycles and return visits that subsequently reach an observed terminal response; method, cookie and state effects remain outside the supplied-trace model.
+- Keep absent hreflang targets unconfirmed and sitemap indexes distinct from checked URL inventories. Review benchmark snapshot structure, counts and content digest without claiming observation authenticity or freshness.
+- Replace unavailable npm quickstarts with source installation and separate hosted 0.8.0/11-tool gateway observations from the source 50/44/46-tool transports. Preserve historical evidence snapshots.
+
+## 2.0.1 (2026-11-16, source release candidate)
+
+- Add working RU/EN browser panels for GSC CSV review, deterministic keyword cleanup, supplied access logs, authorship/trust observations and supplied-page gap review, with bounded inputs, explicit errors and downloadable results.
+- Change the shared webmaster CSV parser contract: reject unknown/duplicate headers, malformed quoting/row widths, missing required metrics, invalid numbers and unsafe totals rather than silently accepting an empty audit or coercing invalid values to zero. Valid supported CSV/TSV/semicolon exports remain supported; malformed inputs that previously appeared successful now fail validation.
+- Derive CTR from observed clicks and impressions. Label the fixed CTR selection curve as illustrative rather than a site benchmark or click forecast. Query-only input does not establish competing page URLs or prove cannibalization.
+- Preserve exact source counts and explicitly bounded previews. Keyword cleanup normalizes and deduplicates supplied strings with deterministic casing and transparent prefix groups; it does not collect live suggestions or perform semantic/SERP clustering.
+- Keep crawler user-agent labels separate from verified identity, supplied trust signals separate from factual authority, and missing observations separate from successful checks. Prevent stale asynchronous file reads from restoring obsolete results; keep raw inputs out of tool event telemetry.
+
 ## 0.7.1 (2026-11-10)
 
 - Return empty 202 responses for accepted notifications and validate JSON-RPC IDs, initialization, bounded batches, Accept and protocol headers.
